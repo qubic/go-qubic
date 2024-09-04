@@ -1,0 +1,48 @@
+services:
+  # Archiver node services
+  qubic-node-proxy:
+    image: local.go-qubic
+    container_name: qubic-node-proxy
+    labels:
+      # Traefik
+      - "traefik.enable=true"
+      ## Router
+      - "traefik.http.routers.qubic-node-proxy.entrypoints=web"
+      - "traefik.http.routers.qubic-node-proxy.rule=(PathPrefix(`/v1`))"
+      ## Middlewares
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=300"
+      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      ## Services
+      - "traefik.http.services.qubic-node-proxy.loadbalancer.server.port=8000"
+    environment:
+      QUBIC_NODE_PROXY_POOL_NODE_FETCHER_URL: "http://213.170.135.5:8080/status"
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "0.0.0.0:8001:8001"
+    networks:
+      - qubic
+    restart: always
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+      - "--providers.docker=true"
+      - "--providers.docker.watch"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - qubic
+    restart: always
+
+networks:
+  qubic:
