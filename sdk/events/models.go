@@ -4,7 +4,151 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/pkg/errors"
+	"github.com/qubic/go-qubic/internal/connector"
+	"io"
 )
+
+const (
+	EventHeaderSize = 26
+)
+
+const (
+	EventTypeQuTransfer = uint8(iota)
+	EventTypeAssetIssuance
+	EventTypeAssetOwnershipChange
+	EventTypeAssetPossessionChange
+	EventTypeContractErrorMessage
+	EventTypeContractWarningMessage
+	EventTypeContractInformationMessage
+	EventTypeContractDebugMessage
+	EventTypeBurning
+	EventTypeDustBurning
+	EventTypeSpectrumStats
+)
+
+const EventTypeCustomMessage = 255
+
+const (
+	EventTypeRequest                   = 44
+	EventTypeResponse                  = 45
+	TransactionEventsRangeTypeRequest  = 48
+	TransactionEventsRangeTypeResponse = 49
+)
+
+type TransactionEventsRange struct {
+	FromEventID    int64
+	NumberOfEvents int64
+}
+
+func (ter *TransactionEventsRange) UnmarshallFromReader(r io.Reader) error {
+	var header connector.RequestResponseHeader
+
+	err := binary.Read(r, binary.BigEndian, &header)
+	if err != nil {
+		return errors.Wrap(err, "reading tick data from reader")
+	}
+
+	if header.Type == connector.EndResponse {
+		return nil
+	}
+
+	packetSize := header.GetSize()
+	_ = packetSize
+
+	headerSize := binary.Size(header)
+	_ = headerSize
+
+	if header.Type != TransactionEventsRangeTypeResponse {
+		return errors.Errorf("Invalid header type, expected %d, found %d", TransactionEventsRangeTypeResponse, header.Type)
+	}
+
+	err = binary.Read(r, binary.LittleEndian, ter)
+	if err != nil {
+		return errors.Wrap(err, "reading transaction events range from reader")
+	}
+
+	return nil
+}
+
+type Event struct {
+	Header    Header
+	EventType uint8
+	EventSize uint32
+	Data      []byte
+}
+
+type Header struct {
+	Epoch       uint16
+	Tick        uint32
+	Tmp         uint32
+	EventID     uint64
+	EventDigest [8]byte
+}
+
+func (ev *Event) UnmarshalBinary(data []byte) error {
+	r := bytes.NewReader(data)
+	err := binary.Read(r, binary.LittleEndian, &ev.Header)
+	if err != nil {
+		return errors.Wrap(err, "reading event header")
+	}
+
+	ev.EventType = uint8(ev.Header.Tmp >> 24)
+	ev.EventSize = (ev.Header.Tmp << 8) >> 8
+
+	eventData := make([]byte, ev.EventSize)
+	err = binary.Read(r, binary.LittleEndian, eventData)
+	if err != nil {
+		return errors.Wrap(err, "reading event data")
+	}
+
+	ev.Data = eventData
+
+	return nil
+}
+
+type Events struct {
+	Items []Event
+	Count int64
+}
+
+func (evs *Events) UnmarshallFromReader(r io.Reader) error {
+	items := make([]Event, 0, evs.Count)
+	for range evs.Count {
+		var header connector.RequestResponseHeader
+		err := binary.Read(r, binary.BigEndian, &header)
+		if err != nil {
+			return errors.Wrap(err, "reading header")
+		}
+
+		if header.Type == connector.EndResponse {
+			break
+		}
+
+		if header.Type != EventTypeResponse {
+			return errors.Errorf("Invalid header type, expected %d, found %d", EventTypeResponse, header.Type)
+		}
+
+		headerSize := binary.Size(header)
+		event := make([]byte, header.GetSize()-uint32(headerSize))
+
+		err = binary.Read(r, binary.LittleEndian, event)
+		if err != nil {
+			return errors.Wrap(err, "reading event data")
+		}
+
+		var ev Event
+		err = ev.UnmarshalBinary(event)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling event")
+		}
+
+		items = append(items, ev)
+	}
+
+	evs.Items = items
+
+	return nil
+}
 
 type QuTransferEvent struct {
 	SourceIdentityPubKey      [32]byte
@@ -24,7 +168,7 @@ func (e *QuTransferEvent) UnmarshalBinary(data []byte) error {
 
 type AssetIssuanceEvent struct {
 	SourceIdentityPubKey [32]byte
-	AssetName            uint64
+	AssetName            [8]byte
 	NumberOfDecimals     uint8
 	MeasurementUnit      [8]byte
 	NumberOfShares       int64
@@ -44,7 +188,7 @@ type AssetOwnershipChangeEvent struct {
 	SourceIdentityPubKey      [32]byte
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
-	AssetName                 uint64
+	AssetName                 [8]byte
 	NumberOfDecimals          uint8
 	MeasurementUnit           [8]byte
 	NumberOfShares            int64
@@ -64,7 +208,7 @@ type AssetPossessionChangeEvent struct {
 	SourceIdentityPubKey      [32]byte
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
-	AssetName                 uint64
+	AssetName                 [8]byte
 	NumberOfDecimals          uint8
 	MeasurementUnit           [8]byte
 	NumberOfShares            int64
