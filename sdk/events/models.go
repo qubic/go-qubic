@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/internal/connector"
+	"github.com/qubic/go-qubic/connector"
 	"io"
 )
 
