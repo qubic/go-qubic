@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/internal/connector"
+	"github.com/qubic/go-qubic/connector"
 	qubicpb "github.com/qubic/go-qubic/proto/v1"
 	"github.com/qubic/go-qubic/sdk/core"
 )

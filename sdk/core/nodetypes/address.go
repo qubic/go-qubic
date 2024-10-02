@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/internal/connector"
+	"github.com/qubic/go-qubic/connector"
 	qubicpb "github.com/qubic/go-qubic/proto/v1"
 	"io"
 )
