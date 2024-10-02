@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/internal/connector"
+	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"github.com/qubic/go-qubic/sdk/core"
 )
 
 type Client struct {
@@ -36,7 +38,7 @@ func (c *Client) GetTickTransactionEventsRange(ctx context.Context, passcode [4]
 	return &result, nil
 }
 
-func (c *Client) GetEvents(ctx context.Context, passcode [4]uint64, fromEventID, toEventID uint64) (*Events, error) {
+func (c *Client) GetRangeEvents(ctx context.Context, passcode [4]uint64, fromEventID, toEventID uint64) (*Events, error) {
 	request := struct {
 		Passcode    [4]uint64
 		FromEventID uint64
@@ -54,4 +56,46 @@ func (c *Client) GetEvents(ctx context.Context, passcode [4]uint64, fromEventID,
 	}
 
 	return &result, nil
+}
+
+func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
+	coreClient := core.NewClient(c.connector)
+
+	td, err := coreClient.GetTickData(ctx, tickNumber)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting tick data")
+	}
+
+	txEvents := make([]*qubicpb.TransactionEvents, 0, len(td.TransactionIds))
+
+	for txIndex, txID := range td.TransactionIds {
+		idRange, err := c.GetTickTransactionEventsRange(ctx, passcode, tickNumber, uint32(txIndex))
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting tick transaction events range for txIndex: %d", txIndex)
+		}
+
+		if idRange.FromEventID == -1 || idRange.NumberOfEvents == -1 {
+			continue
+		}
+
+		evs, err := c.GetRangeEvents(ctx, passcode, uint64(idRange.FromEventID), uint64(idRange.FromEventID+idRange.NumberOfEvents))
+		if err != nil {
+			return nil, errors.Wrap(err, "getting events")
+		}
+
+		events := make([]*qubicpb.Event, 0, len(evs.Items))
+		for _, ev := range evs.Items {
+			protoEvent := EventConverter.ToProto(ev)
+			events = append(events, protoEvent)
+		}
+
+		txEvent := qubicpb.TransactionEvents{
+			TxId:   txID,
+			Events: events,
+		}
+
+		txEvents = append(txEvents, &txEvent)
+	}
+
+	return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: txEvents}, nil
 }

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package qubic.v1;
+
+option go_package = "github.com/qubic/go-qubic/v1/qubicpb";
+
+message Event {
+  message Header {
+    uint32 epoch = 1;
+    uint32 tick = 2;
+    uint32 tmp = 3;
+    uint64 event_id = 4;
+    uint64 event_digest = 5;
+  }
+
+  Header header = 1;
+  uint32 event_type = 2;
+  uint32 event_size = 3;
+  string event_data = 4;
+}
+
+message TransactionEvents {
+  string tx_id = 1;
+  repeated Event events = 2;
+}
+
+message TickEvents {
+  uint32 tick = 1;
+  repeated TransactionEvents tx_events = 2;
+}
+
