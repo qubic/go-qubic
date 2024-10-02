@@ -49,7 +49,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, passcode [4]uint64, fromEve
 		ToEventID:   toEventID,
 	}
 
-	result := Events{Count: int64(toEventID - fromEventID)}
+	result := Events{Count: int64(toEventID-fromEventID) + 1}
 	err := c.connector.PerformCoreRequest(ctx, EventTypeRequest, request, &result)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing core request")
@@ -58,7 +58,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, passcode [4]uint64, fromEve
 	return &result, nil
 }
 
-func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
+func (c *Client) GetTickEventsChunk(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	coreClient := core.NewClient(c.connector)
 
 	td, err := coreClient.GetTickData(ctx, tickNumber)
@@ -87,6 +87,54 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 		for _, ev := range evs.Items {
 			protoEvent := EventConverter.ToProto(ev)
 			events = append(events, protoEvent)
+		}
+
+		txEvent := qubicpb.TransactionEvents{
+			TxId:   txID,
+			Events: events,
+		}
+
+		txEvents = append(txEvents, &txEvent)
+	}
+
+	return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: txEvents}, nil
+}
+
+func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
+	coreClient := core.NewClient(c.connector)
+
+	td, err := coreClient.GetTickData(ctx, tickNumber)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting tick data")
+	}
+
+	txEvents := make([]*qubicpb.TransactionEvents, 0, len(td.TransactionIds))
+
+	for txIndex, txID := range td.TransactionIds {
+		idRange, err := c.GetTickTransactionEventsRange(ctx, passcode, tickNumber, uint32(txIndex))
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting tick transaction events range for txIndex: %d", txIndex)
+		}
+
+		if idRange.FromEventID == -1 || idRange.NumberOfEvents == -1 {
+			continue
+		}
+
+		from := uint64(idRange.FromEventID)
+		to := uint64(idRange.FromEventID + idRange.NumberOfEvents)
+
+		events := make([]*qubicpb.Event, 0, idRange.NumberOfEvents)
+
+		for i := from; i < to; i++ {
+			evs, err := c.GetRangeEvents(ctx, passcode, i, i)
+			if err != nil {
+				return nil, errors.Wrapf(err, "getting events for txIndex: %d, from event id: %d, to event id: %d", txIndex, from, to)
+			}
+
+			for _, ev := range evs.Items {
+				protoEvent := EventConverter.ToProto(ev)
+				events = append(events, protoEvent)
+			}
 		}
 
 		txEvent := qubicpb.TransactionEvents{
