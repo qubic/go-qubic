@@ -6,6 +6,7 @@ import (
 	"github.com/qubic/go-qubic/connector"
 	qubicpb "github.com/qubic/go-qubic/proto/v1"
 	"github.com/qubic/go-qubic/sdk/core"
+	"time"
 )
 
 type Client struct {
@@ -126,9 +127,19 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, 
 		events := make([]*qubicpb.Event, 0, idRange.NumberOfEvents)
 
 		for i := from; i < to; i++ {
-			evs, err := c.GetRangeEvents(ctx, passcode, i, i)
+			evs, err := func(eventID uint64) (*Events, error) {
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+				defer cancel()
+
+				evs, err := c.GetRangeEvents(ctx, passcode, eventID, eventID)
+				if err != nil {
+					return nil, errors.Wrapf(err, "getting events for txIndex: %d, from event id: %d, to event id: %d", txIndex, from, to)
+				}
+
+				return evs, nil
+			}(i)
 			if err != nil {
-				return nil, errors.Wrapf(err, "getting events for txIndex: %d, from event id: %d, to event id: %d", txIndex, from, to)
+				return nil, errors.Wrapf(err, "getting events for txIndex: %d, event id: %d", txIndex, i)
 			}
 
 			for _, ev := range evs.Items {
