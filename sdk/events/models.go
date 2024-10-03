@@ -85,8 +85,7 @@ type Header struct {
 	EventDigest [8]byte
 }
 
-func (ev *Event) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
+func (ev *Event) UnmarshalFromReader(r io.Reader) error {
 	err := binary.Read(r, binary.LittleEndian, &ev.Header)
 	if err != nil {
 		return errors.Wrap(err, "reading event header")
@@ -112,37 +111,28 @@ type Events struct {
 }
 
 func (evs *Events) UnmarshallFromReader(r io.Reader) error {
+	var header connector.RequestResponseHeader
+	err := binary.Read(r, binary.BigEndian, &header)
+	if err != nil {
+		return errors.Wrap(err, "reading header")
+	}
+
+	if header.Type == connector.EndResponse {
+		return nil
+	}
+
+	if header.Type != EventTypeResponse {
+		return errors.Errorf("Invalid header type, expected %d, found %d", EventTypeResponse, header.Type)
+	}
 	items := make([]Event, 0, evs.Count)
 	for range evs.Count {
-		var header connector.RequestResponseHeader
-		err := binary.Read(r, binary.BigEndian, &header)
-		if err != nil {
-			return errors.Wrap(err, "reading header")
-		}
-
-		if header.Type == connector.EndResponse {
-			break
-		}
-
-		if header.Type != EventTypeResponse {
-			return errors.Errorf("Invalid header type, expected %d, found %d", EventTypeResponse, header.Type)
-		}
-
-		headerSize := binary.Size(header)
-		event := make([]byte, header.GetSize()-uint32(headerSize))
-
-		err = binary.Read(r, binary.LittleEndian, event)
-		if err != nil {
-			return errors.Wrap(err, "reading event data")
-		}
-
 		var ev Event
-		err = ev.UnmarshalBinary(event)
+		err = ev.UnmarshalFromReader(r)
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling event")
 		}
-
 		items = append(items, ev)
+		//fmt.Printf("Got event id: %d\n", ev.Header.EventID)
 	}
 
 	evs.Items = items
