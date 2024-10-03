@@ -53,7 +53,9 @@ func (c *Connector) PerformCoreRequest(ctx context.Context, requestType uint8, r
 	if err != nil {
 		return errors.Wrap(err, "getting connection handler")
 	}
-	defer c.conPool.PutBack(ch, err)
+	defer func() {
+		c.conPool.PutBack(ch, err)
+	}()
 
 	err = ch.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
@@ -69,7 +71,9 @@ func (c *Connector) PerformSmartContractRequest(ctx context.Context, reqContract
 	if err != nil {
 		return errors.Wrap(err, "getting connection handler")
 	}
-	defer c.conPool.PutBack(ch, err)
+	defer func() {
+		c.conPool.PutBack(ch, err)
+	}()
 
 	err = ch.handleSmartContractRequest(ctx, reqContractFunction, requestData, dest)
 	if err != nil {

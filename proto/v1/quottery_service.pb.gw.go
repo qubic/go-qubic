@@ -290,7 +290,7 @@ func RegisterQuotteryServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/qubic.v1.QuotteryService/GetBettorsByBetOption", runtime.WithHTTPPathPattern("/v1/getBettorsByBetOption"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/qubic.v1.QuotteryService/GetBettorsByBetOption", runtime.WithHTTPPathPattern("/v1/quottery/getBettorsByBetOption"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -442,7 +442,7 @@ func RegisterQuotteryServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/qubic.v1.QuotteryService/GetBettorsByBetOption", runtime.WithHTTPPathPattern("/v1/getBettorsByBetOption"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/qubic.v1.QuotteryService/GetBettorsByBetOption", runtime.WithHTTPPathPattern("/v1/quottery/getBettorsByBetOption"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -470,7 +470,7 @@ var (
 
 	pattern_QuotteryService_GetActiveBetsByCreator_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "quottery", "getActiveBetsByCreator"}, ""))
 
-	pattern_QuotteryService_GetBettorsByBetOption_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "getBettorsByBetOption"}, ""))
+	pattern_QuotteryService_GetBettorsByBetOption_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "quottery", "getBettorsByBetOption"}, ""))
 )
 
 var (
