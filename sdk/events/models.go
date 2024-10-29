@@ -204,6 +204,16 @@ type AssetPossessionChangeEvent struct {
 	NumberOfShares            int64
 }
 
+func (e *AssetPossessionChangeEvent) UnmarshalBinary(data []byte) error {
+	r := bytes.NewReader(data)
+	err := binary.Read(r, binary.LittleEndian, e)
+	if err != nil {
+		return errors.Wrap(err, "reading asset possession change event")
+	}
+
+	return nil
+}
+
 type BurningEvent struct {
 	SourceIdentityPubKey [32]byte
 	Amount               uint64
