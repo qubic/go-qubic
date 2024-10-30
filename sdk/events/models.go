@@ -132,7 +132,6 @@ func (evs *Events) UnmarshallFromReader(r io.Reader) error {
 			return errors.Wrap(err, "unmarshalling event")
 		}
 		items = append(items, ev)
-		//fmt.Printf("Got event id: %d\n", ev.Header.EventID)
 	}
 
 	evs.Items = items
@@ -158,10 +157,10 @@ func (e *QuTransferEvent) UnmarshalBinary(data []byte) error {
 
 type AssetIssuanceEvent struct {
 	SourceIdentityPubKey [32]byte
-	AssetName            [8]byte
-	NumberOfDecimals     uint8
-	MeasurementUnit      [8]byte
 	NumberOfShares       int64
+	AssetName            [7]byte
+	NumberOfDecimals     uint8
+	MeasurementUnit      [7]byte
 }
 
 func (e *AssetIssuanceEvent) UnmarshalBinary(data []byte) error {
@@ -178,10 +177,10 @@ type AssetOwnershipChangeEvent struct {
 	SourceIdentityPubKey      [32]byte
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
-	AssetName                 [8]byte
-	NumberOfDecimals          uint8
-	MeasurementUnit           [8]byte
 	NumberOfShares            int64
+	AssetName                 [7]byte
+	NumberOfDecimals          uint8
+	MeasurementUnit           [7]byte
 }
 
 func (e *AssetOwnershipChangeEvent) UnmarshalBinary(data []byte) error {
@@ -198,10 +197,10 @@ type AssetPossessionChangeEvent struct {
 	SourceIdentityPubKey      [32]byte
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
-	AssetName                 [8]byte
-	NumberOfDecimals          uint8
-	MeasurementUnit           [8]byte
 	NumberOfShares            int64
+	AssetName                 [7]byte
+	NumberOfDecimals          uint8
+	MeasurementUnit           [7]byte
 }
 
 func (e *AssetPossessionChangeEvent) UnmarshalBinary(data []byte) error {
