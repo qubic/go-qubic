@@ -69,6 +69,10 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, 
 		return nil, errors.Wrap(err, "getting tick data")
 	}
 
+	if len(td.TransactionIds) == 0 {
+		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
+	}
+
 	txEvents := make([]*qubicpb.TransactionEvents, 0, len(td.TransactionIds))
 
 	for txIndex, txID := range td.TransactionIds {
@@ -128,6 +132,10 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 		return nil, errors.Wrap(err, "getting tick data")
 	}
 
+	if len(td.TransactionIds) == 0 {
+		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
+	}
+
 	req := struct {
 		Passcode   [4]uint64
 		TickNumber uint32
@@ -157,6 +165,10 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 		}
 
 		endEventId = result.FromEventID[i] + result.Length[i] - 1
+	}
+
+	if startEventId == math.MaxInt64 {
+		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
 	}
 
 	events, err := c.GetRangeEvents(ctx, passcode, uint64(startEventId), uint64(endEventId))
