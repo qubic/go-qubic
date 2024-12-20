@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/connector"
+	"github.com/qubic/go-qubic/sdk/core/nodetypes"
 	"io"
 )
 
@@ -29,10 +30,12 @@ const (
 const EventTypeCustomMessage = 255
 
 const (
-	EventTypeRequest                   = 44
-	EventTypeResponse                  = 45
-	TransactionEventsRangeTypeRequest  = 48
-	TransactionEventsRangeTypeResponse = 49
+	EventTypeRequest                     = 44
+	EventTypeResponse                    = 45
+	TransactionEventsRangeTypeRequest    = 48
+	TransactionEventsRangeTypeResponse   = 49
+	TickTransactionEventsIDsTypeRequest  = 50
+	TickTransactionEventsIDsTypeResponse = 51
 )
 
 type TransactionEventsRange struct {
@@ -278,6 +281,37 @@ func (e *ContractMessageEvent) UnmarshalBinary(data []byte) error {
 	err = binary.Read(r, binary.LittleEndian, &e.Message)
 	if err != nil {
 		return errors.Wrap(err, "reading contract message")
+	}
+
+	return nil
+}
+
+const MaxNumberOfSpecialEventsPerTick = 5
+
+type TickTransactionEventIDs struct {
+	FromEventID [nodetypes.MaxNumberOfTransactionsPerTick + MaxNumberOfSpecialEventsPerTick]int64
+	Length      [nodetypes.MaxNumberOfTransactionsPerTick + MaxNumberOfSpecialEventsPerTick]int64
+}
+
+func (e *TickTransactionEventIDs) UnmarshallFromReader(r io.Reader) error {
+	var header connector.RequestResponseHeader
+
+	err := binary.Read(r, binary.BigEndian, &header)
+	if err != nil {
+		return errors.Wrap(err, "reading header from reader")
+	}
+
+	if header.Type == connector.EndResponse {
+		return nil
+	}
+
+	if header.Type != TickTransactionEventsIDsTypeResponse {
+		return errors.Errorf("Invalid header type, expected %d, found %d", TickTransactionEventsIDsTypeResponse, header.Type)
+	}
+
+	err = binary.Read(r, binary.LittleEndian, e)
+	if err != nil {
+		return errors.Wrap(err, "reading tick transaction event ids from reader")
 	}
 
 	return nil
