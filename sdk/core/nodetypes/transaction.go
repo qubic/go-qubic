@@ -268,7 +268,7 @@ type TransactionStatus struct {
 	CurrentTickOfNode  uint32
 	Tick               uint32
 	TxCount            uint32
-	MoneyFlew          [(NumberOfTransactionsPerTick + 7) / 8]byte
+	MoneyFlew          [(MaxNumberOfTransactionsPerTick + 7) / 8]byte
 	TransactionDigests [][32]byte
 }
 

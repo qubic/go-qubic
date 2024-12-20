@@ -143,13 +143,13 @@ func (c *Client) GetTickTransactions(ctx context.Context, tickNumber uint32) (*q
 
 	requestTickTransactions := struct {
 		Tick             uint32
-		TransactionFlags [nodetypes.NumberOfTransactionsPerTick / 8]uint8
+		TransactionFlags [nodetypes.MaxNumberOfTransactionsPerTick / 8]uint8
 	}{Tick: tickNumber}
 
 	for i := 0; i < (nrTx+7)/8; i++ {
 		requestTickTransactions.TransactionFlags[i] = 0
 	}
-	for i := (nrTx + 7) / 8; i < nodetypes.NumberOfTransactionsPerTick/8; i++ {
+	for i := (nrTx + 7) / 8; i < nodetypes.MaxNumberOfTransactionsPerTick/8; i++ {
 		requestTickTransactions.TransactionFlags[i] = 1
 	}
 

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	NumberOfTransactionsPerTick = 1024
+	MaxNumberOfTransactionsPerTick = 1024
 )
 
 const (
@@ -35,7 +35,7 @@ type TickData struct {
 	Month              uint8
 	Year               uint8
 	Timelock           [32]byte
-	TransactionDigests [NumberOfTransactionsPerTick][32]byte
+	TransactionDigests [MaxNumberOfTransactionsPerTick][32]byte
 	ContractFees       [1024]int64
 	Signature          [SignatureSize]byte
 }
