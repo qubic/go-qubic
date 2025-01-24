@@ -158,6 +158,10 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 			continue
 		}
 
+		if result.FromEventID[i] == -2 || result.FromEventID[i] == -3 {
+			return nil, errors.Errorf("From event id value %d inconsistent node", result.FromEventID[i])
+		}
+
 		addEventIDsToMap(txForEventID, result.FromEventID[i], result.Length[i], td.TransactionIds[i])
 
 		if result.FromEventID[i] < startEventId {
