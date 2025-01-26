@@ -146,6 +146,9 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 
 	var result TickTransactionEventIDs
 	err = c.connector.PerformCoreRequest(ctx, TickTransactionEventsIDsTypeRequest, req, &result)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing core request")
+	}
 
 	var startEventId int64 = math.MaxInt64
 	var endEventId int64
