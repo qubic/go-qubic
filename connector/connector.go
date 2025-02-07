@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"github.com/pkg/errors"
+	"net"
 	"time"
 )
 
@@ -63,6 +64,58 @@ func (c *Connector) PerformCoreRequest(ctx context.Context, requestType uint8, r
 	}
 
 	return nil
+}
+
+type PasscodeRequestData interface {
+	AddPasscode([4]uint64)
+}
+
+func (c *Connector) PerformCoreRequestWithPasscode(ctx context.Context, requestType uint8, passcodes map[string][4]uint64, requestData PasscodeRequestData, dest ReaderUnmarshaler) error {
+	var err error
+	ch, err := c.conPool.Get()
+	if err != nil {
+		return errors.Wrap(err, "getting connection handler")
+	}
+	defer func() {
+		c.conPool.PutBack(ch, err)
+	}()
+
+	err = injectPasscode(requestData, ch.conn.RemoteAddr(), passcodes)
+	if err != nil {
+		return errors.Wrap(err, "injecting passcode")
+	}
+
+	err = ch.handleCoreRequest(ctx, requestType, requestData, dest)
+	if err != nil {
+		return errors.Wrap(err, "handling core request with passcode")
+	}
+
+	return nil
+}
+
+func injectPasscode(requestData PasscodeRequestData, destinationNodeAddr net.Addr, passcodes map[string][4]uint64) error {
+	passcode, err := getPasscodeForAddr(destinationNodeAddr, passcodes)
+	if err != nil {
+		return errors.Wrapf(err, "getting passcode for addr: %s", destinationNodeAddr.String())
+	}
+
+	requestData.AddPasscode(passcode)
+
+	return nil
+}
+
+func getPasscodeForAddr(addr net.Addr, passcodes map[string][4]uint64) ([4]uint64, error) {
+	host, _, err := net.SplitHostPort(addr.String())
+	if err != nil {
+		return [4]uint64{}, errors.Wrap(err, "splitting host and port")
+	}
+
+	passcode, ok := passcodes[host]
+	if !ok {
+		return [4]uint64{}, errors.Errorf("passcode not found for host %s", host)
+	}
+
+	return passcode, nil
 }
 
 func (c *Connector) PerformSmartContractRequest(ctx context.Context, reqContractFunction RequestContractFunction, requestData interface{}, dest ReaderUnmarshaler) error {

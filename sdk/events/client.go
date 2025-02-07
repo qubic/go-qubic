@@ -13,27 +13,34 @@ import (
 
 type Client struct {
 	connector *connector.Connector
+	passcodes map[string][4]uint64
 }
 
-func NewClient(connector *connector.Connector) *Client {
+func NewClient(connector *connector.Connector, passcodes map[string][4]uint64) *Client {
 	return &Client{
 		connector: connector,
+		passcodes: passcodes,
 	}
 }
 
-func (c *Client) GetTickTransactionEventsRange(ctx context.Context, passcode [4]uint64, tickNumber, txIndex uint32) (*TransactionEventsRange, error) {
-	request := struct {
-		Passcode   [4]uint64
-		TickNumber uint32
-		TxIndex    uint32
-	}{
-		Passcode:   passcode,
+type getTickTransactionsEventRangeRequest struct {
+	Passcode   [4]uint64
+	TickNumber uint32
+	TxIndex    uint32
+}
+
+func (r *getTickTransactionsEventRangeRequest) AddPasscode(passcode [4]uint64) {
+	r.Passcode = passcode
+}
+
+func (c *Client) GetTickTransactionEventsRange(ctx context.Context, tickNumber, txIndex uint32) (*TransactionEventsRange, error) {
+	request := getTickTransactionsEventRangeRequest{
 		TickNumber: tickNumber,
 		TxIndex:    txIndex,
 	}
 
 	var result TransactionEventsRange
-	err := c.connector.PerformCoreRequest(ctx, TransactionEventsRangeTypeRequest, request, &result)
+	err := c.connector.PerformCoreRequestWithPasscode(ctx, TransactionEventsRangeTypeRequest, c.passcodes, &request, &result)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing core request")
 	}
@@ -41,19 +48,24 @@ func (c *Client) GetTickTransactionEventsRange(ctx context.Context, passcode [4]
 	return &result, nil
 }
 
-func (c *Client) GetRangeEvents(ctx context.Context, passcode [4]uint64, fromEventID, toEventID uint64) (*Events, error) {
-	request := struct {
-		Passcode    [4]uint64
-		FromEventID uint64
-		ToEventID   uint64
-	}{
-		Passcode:    passcode,
+type getRangeEventsRequest struct {
+	Passcode    [4]uint64
+	FromEventID uint64
+	ToEventID   uint64
+}
+
+func (r *getRangeEventsRequest) AddPasscode(passcode [4]uint64) {
+	r.Passcode = passcode
+}
+
+func (c *Client) GetRangeEvents(ctx context.Context, fromEventID, toEventID uint64) (*Events, error) {
+	request := getRangeEventsRequest{
 		FromEventID: fromEventID,
 		ToEventID:   toEventID,
 	}
 
 	result := Events{Count: int64(toEventID-fromEventID) + 1}
-	err := c.connector.PerformCoreRequest(ctx, EventTypeRequest, request, &result)
+	err := c.connector.PerformCoreRequestWithPasscode(ctx, EventTypeRequest, c.passcodes, &request, &result)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing core request")
 	}
@@ -61,7 +73,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, passcode [4]uint64, fromEve
 	return &result, nil
 }
 
-func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
+func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	coreClient := core.NewClient(c.connector)
 
 	td, err := coreClient.GetTickData(ctx, tickNumber)
@@ -76,7 +88,7 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, 
 	txEvents := make([]*qubicpb.TransactionEvents, 0, len(td.TransactionIds))
 
 	for txIndex, txID := range td.TransactionIds {
-		idRange, err := c.GetTickTransactionEventsRange(ctx, passcode, tickNumber, uint32(txIndex))
+		idRange, err := c.GetTickTransactionEventsRange(ctx, tickNumber, uint32(txIndex))
 		if err != nil {
 			return nil, errors.Wrapf(err, "getting tick transaction events range for txIndex: %d", txIndex)
 		}
@@ -95,7 +107,7 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, 
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 				defer cancel()
 
-				evs, err := c.GetRangeEvents(ctx, passcode, eventID, eventID)
+				evs, err := c.GetRangeEvents(ctx, eventID, eventID)
 				if err != nil {
 					return nil, errors.Wrapf(err, "getting events for txIndex: %d, from event id: %d, to event id: %d", txIndex, from, to)
 				}
@@ -123,8 +135,17 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, passcode [4]uint64, 
 	return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: txEvents}, nil
 }
 
+type getTickEventsRequest struct {
+	Passcode   [4]uint64
+	TickNumber uint32
+}
+
+func (r *getTickEventsRequest) AddPasscode(passcode [4]uint64) {
+	r.Passcode = passcode
+}
+
 // GetTickEvents returns all events for a given tick number. This is not returning the special events (init_sc, begin_epoch, begin_tick, end_tick, end_epoch).
-func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumber uint32) (*qubicpb.TickEvents, error) {
+func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	coreClient := core.NewClient(c.connector)
 
 	td, err := coreClient.GetTickData(ctx, tickNumber)
@@ -136,16 +157,12 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
 	}
 
-	req := struct {
-		Passcode   [4]uint64
-		TickNumber uint32
-	}{
-		Passcode:   passcode,
+	req := getTickEventsRequest{
 		TickNumber: tickNumber,
 	}
 
 	var result TickTransactionEventIDs
-	err = c.connector.PerformCoreRequest(ctx, TickTransactionEventsIDsTypeRequest, req, &result)
+	err = c.connector.PerformCoreRequestWithPasscode(ctx, TickTransactionEventsIDsTypeRequest, c.passcodes, &req, &result)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing core request")
 	}
@@ -178,7 +195,7 @@ func (c *Client) GetTickEvents(ctx context.Context, passcode [4]uint64, tickNumb
 		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
 	}
 
-	events, err := c.GetRangeEvents(ctx, passcode, uint64(startEventId), uint64(endEventId))
+	events, err := c.GetRangeEvents(ctx, uint64(startEventId), uint64(endEventId))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting range events")
 	}
