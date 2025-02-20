@@ -10,10 +10,10 @@ import (
 )
 
 type Client struct {
-	connector *connector.Connector
+	connector connector.RequestPerformer
 }
 
-func NewClient(connector *connector.Connector) *Client {
+func NewClient(connector connector.RequestPerformer) *Client {
 	return &Client{
 		connector: connector,
 	}
