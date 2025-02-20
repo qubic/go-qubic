@@ -12,11 +12,12 @@ import (
 )
 
 type Client struct {
-	connector *connector.Connector
-	passcodes map[string][4]uint64
+	connector  connector.RequestPerformer
+	coreClient *core.Client
+	passcodes  map[string][4]uint64
 }
 
-func NewClient(connector *connector.Connector, passcodes map[string][4]uint64) *Client {
+func NewClient(connector connector.RequestPerformer, passcodes map[string][4]uint64) *Client {
 	return &Client{
 		connector: connector,
 		passcodes: passcodes,
@@ -74,9 +75,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, fromEventID, toEventID uint
 }
 
 func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
-	coreClient := core.NewClient(c.connector)
-
-	td, err := coreClient.GetTickData(ctx, tickNumber)
+	td, err := c.coreClient.GetTickData(ctx, tickNumber)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting tick data")
 	}
@@ -146,9 +145,7 @@ func (r *getTickEventsRequest) AddPasscode(passcode [4]uint64) {
 
 // GetTickEvents returns all events for a given tick number. This is not returning the special events (init_sc, begin_epoch, begin_tick, end_tick, end_epoch).
 func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
-	coreClient := core.NewClient(c.connector)
-
-	td, err := coreClient.GetTickData(ctx, tickNumber)
+	td, err := c.coreClient.GetTickData(ctx, tickNumber)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting tick data")
 	}
