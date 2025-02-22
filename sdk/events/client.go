@@ -19,8 +19,9 @@ type Client struct {
 
 func NewClient(connector connector.RequestPerformer, passcodes map[string][4]uint64) *Client {
 	return &Client{
-		connector: connector,
-		passcodes: passcodes,
+		connector:  connector,
+		coreClient: core.NewClient(connector),
+		passcodes:  passcodes,
 	}
 }
 
