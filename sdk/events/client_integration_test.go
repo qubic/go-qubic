@@ -1,3 +1,6 @@
+//go:build !ci
+// +build !ci
+
 package events
 
 import (
@@ -13,8 +16,8 @@ func TestClient_GetTickEvents(t *testing.T) {
 
 	connectorConfig := connector.Config{
 		ConnectionPort:        "21841",
-		ConnectionTimeout:     time.Minute,
-		HandlerRequestTimeout: time.Minute,
+		ConnectionTimeout:     10 * time.Second,
+		HandlerRequestTimeout: 10 * time.Second,
 	}
 	requestPerformer, err := connector.NewConnector("1.2.3.4", connectorConfig)
 	assert.NoError(t, err)
@@ -24,13 +27,11 @@ func TestClient_GetTickEvents(t *testing.T) {
 	}
 
 	eventClient := NewClient(requestPerformer, passcodes)
-
-	//tickEvents, err := eventClient.GetTickEventsOneByOne(context.Background(), 20542764)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	tickEvents, err := eventClient.GetTickEvents(ctx, 20542765)
+	tickEvents, err := eventClient.GetTickEvents(ctx, 20577267)
+	//tickEvents, err := eventClient.GetTickEvents(ctx, 20542744)
 	assert.NoError(t, err)
 	log.Print(tickEvents.Tick)
 

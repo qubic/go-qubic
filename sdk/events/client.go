@@ -151,7 +151,7 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 		return nil, errors.Wrap(err, "getting tick data")
 	}
 
-	log.Printf("Tick transactions: %s", td.TransactionIds) // FIXME remove me
+	log.Printf("Tick [%d] transactions: %s", tickNumber, td.TransactionIds) // FIXME remove me
 
 	if len(td.TransactionIds) == 0 {
 		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
