@@ -151,6 +151,8 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 		return nil, errors.Wrap(err, "getting tick data")
 	}
 
+	log.Printf("Tick transactions: %s", td.TransactionIds) // FIXME remove me
+
 	if len(td.TransactionIds) == 0 {
 		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
 	}
@@ -164,6 +166,9 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 	if err != nil {
 		return nil, errors.Wrap(err, "performing core request")
 	}
+
+	log.Printf("Tick transaction event ids [%d].", result.FromEventID) // FIXME remove me
+	log.Printf("Tick transaction event length [%d].", result.Length)   // FIXME remove me
 
 	var startEventId int64 = math.MaxInt64
 	var endEventId int64
@@ -193,10 +198,14 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 		return &qubicpb.TickEvents{Tick: tickNumber, TxEvents: []*qubicpb.TransactionEvents{}}, nil
 	}
 
+	log.Printf("Before getting range events Start: %d, End: %d", startEventId, endEventId) // FIXME remove me
+
 	events, err := c.GetRangeEvents(ctx, uint64(startEventId), uint64(endEventId))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting range events")
 	}
+
+	log.Printf("Events: %d", events.Count) // FIXME remove me
 
 	eventsByTxID := make(map[string]*qubicpb.TransactionEvents)
 
