@@ -2,9 +2,28 @@ package common
 
 import (
 	"encoding/base64"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"log"
 	"testing"
 )
+
+func Test_LogEncodedPasscode_NoError(t *testing.T) {
+	encoded, err := EncodePasscodeToBase64([4]uint64{1, 2, 3, 4})
+
+	require.NoError(t, err)
+	log.Printf("Passcode: [%s]", encoded)
+	assert.Equal(t, "AAAAAAAAAAEAAAAAAAAAAgAAAAAAAAADAAAAAAAAAAQ=", encoded)
+}
+
+func Test_LogDecodedPasscode_NoError(t *testing.T) {
+	validBase64 := "AAAAAAAAAAEAAAAAAAAAAgAAAAAAAAADAAAAAAAAAAQ=" // 1 2 3 4
+
+	decoded, err := DecodePasscodeFromBase64(validBase64)
+	require.NoError(t, err)
+	log.Printf("Passcode: %v", decoded)
+	assert.Equal(t, [4]uint64{1, 2, 3, 4}, decoded)
+}
 
 func TestEncodeDecodePasscodeBase64(t *testing.T) {
 	tcs := []struct {
