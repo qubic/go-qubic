@@ -3,10 +3,11 @@ package events
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
+
 	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/connector"
 	"github.com/qubic/go-qubic/sdk/core/nodetypes"
-	"io"
 )
 
 const (
@@ -159,11 +160,12 @@ func (e *QuTransferEvent) UnmarshalBinary(data []byte) error {
 }
 
 type AssetIssuanceEvent struct {
-	SourceIdentityPubKey [32]byte
-	NumberOfShares       int64
-	AssetName            [7]byte
-	NumberOfDecimals     uint8
-	MeasurementUnit      [7]byte
+	SourceIdentityPubKey  [32]byte
+	NumberOfShares        int64
+	ManagingContractIndex int64
+	AssetName             [7]byte
+	NumberOfDecimals      uint8
+	MeasurementUnit       [7]byte
 }
 
 func (e *AssetIssuanceEvent) UnmarshalBinary(data []byte) error {
