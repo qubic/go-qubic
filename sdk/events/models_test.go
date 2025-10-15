@@ -2,12 +2,13 @@ package events
 
 import (
 	"encoding/base64"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestAssetIssuanceEvent_UnmarshalBinary(t *testing.T) {
-	base64Encoded := "fBUfs37FBf00y/XqDc6kE/JNnjpN0DDl2QR/r0BhsKpAb0ABAAAAAFFDQVAAAAAAAAAAAAAAAA=="
+	base64Encoded := "fBUfs37FBf00y/XqDc6kE/JNnjpN0DDl2QR/r0BhsKpAb0ABAAAAAAoAAAAAAAAAUUNBUAAAAAAAAAAAAAAA"
 	data, err := base64.StdEncoding.DecodeString(base64Encoded)
 	require.NoError(t, err, "decoding base64 data")
 	var event AssetIssuanceEvent
