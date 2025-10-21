@@ -17,7 +17,7 @@ func TestAssetIssuanceEvent_UnmarshalBinary(t *testing.T) {
 }
 
 func TestAssetOwnershipChangeEvent_UnmarshalBinary(t *testing.T) {
-	base64Encoded := "QvMt7n7vPwdDhVUbxbRVOxMpx/7trku3V9udvL77Hfm0XNyWnewpiwi3DPqGYe9p1T1ee0dgKChsGN91xWt9RAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAABNTE0AAAAAAAAAAAAAAAA="
+	base64Encoded := "QvMt7n7vPwdDhVUbxbRVOxMpx/7trku3V9udvL77Hfm0XNyWnewpiwi3DPqGYe9p1T1ee0dgKChsGN91xWt9RAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAKAAAAAAAAAE1MTQAAAAAAAAAAAAAAAA=="
 	data, err := base64.StdEncoding.DecodeString(base64Encoded)
 	require.NoError(t, err, "decoding base64 data")
 	var event AssetOwnershipChangeEvent
@@ -26,7 +26,7 @@ func TestAssetOwnershipChangeEvent_UnmarshalBinary(t *testing.T) {
 }
 
 func TestAssetPossessionChangeEvent_UnmarshalBinary(t *testing.T) {
-	base64Encoded := "QvMt7n7vPwdDhVUbxbRVOxMpx/7trku3V9udvL77Hfm0XNyWnewpiwi3DPqGYe9p1T1ee0dgKChsGN91xWt9RAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAABNTE0AAAAAAAAAAAAAAAA="
+	base64Encoded := "QvMt7n7vPwdDhVUbxbRVOxMpx/7trku3V9udvL77Hfm0XNyWnewpiwi3DPqGYe9p1T1ee0dgKChsGN91xWt9RAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAKAAAAAAAAAE1MTQAAAAAAAAAAAAAAAA=="
 	data, err := base64.StdEncoding.DecodeString(base64Encoded)
 	require.NoError(t, err, "decoding base64 data")
 
