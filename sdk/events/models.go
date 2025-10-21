@@ -183,6 +183,7 @@ type AssetOwnershipChangeEvent struct {
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
 	NumberOfShares            int64
+	ManagingContractIndex     int64
 	AssetName                 [7]byte
 	NumberOfDecimals          uint8
 	MeasurementUnit           [7]byte
@@ -203,6 +204,7 @@ type AssetPossessionChangeEvent struct {
 	DestinationIdentityPubKey [32]byte
 	IssuerIdentityPubKey      [32]byte
 	NumberOfShares            int64
+	ManagingContractIndex     int64
 	AssetName                 [7]byte
 	NumberOfDecimals          uint8
 	MeasurementUnit           [7]byte
