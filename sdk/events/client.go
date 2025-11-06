@@ -2,13 +2,15 @@ package events
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"math"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/connector"
 	qubicpb "github.com/qubic/go-qubic/proto/v1"
 	"github.com/qubic/go-qubic/sdk/core"
-	"log"
-	"math"
-	"time"
 )
 
 type Client struct {
@@ -75,6 +77,9 @@ func (c *Client) GetRangeEvents(ctx context.Context, fromEventID, toEventID uint
 	return &result, nil
 }
 
+// GetTickEventsOneByOne Gets events per transaction index (one request per index).
+//
+// Deprecated: GetTickEventsOneByOne is deprecated as it is very inefficient. Use GetTickEvents instead.
 func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	td, err := c.coreClient.GetTickData(ctx, tickNumber)
 	if err != nil {
@@ -201,9 +206,16 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 	eventsByTxID := make(map[string]*qubicpb.TransactionEvents)
 
 	for _, ev := range events.Items {
-		txID, ok := txForEventID[int64(ev.Header.EventID)]
+
+		header := ev.Header
+		if header.Tick != tickNumber {
+			return nil, fmt.Errorf("received faulty data: event [%d] tick [%d] vs expected [%d]",
+				header.EventID, header.Tick, tickNumber)
+		}
+
+		txID, ok := txForEventID[int64(header.EventID)]
 		if !ok {
-			log.Printf("Event with ID %d has no corresponding transaction ID\n", ev.Header.EventID)
+			log.Printf("Event with ID %d has no corresponding transaction ID\n", header.EventID)
 		}
 
 		txEvents, ok := eventsByTxID[txID]
