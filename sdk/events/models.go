@@ -3,6 +3,7 @@ package events
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -26,6 +27,9 @@ const (
 	EventTypeBurning
 	EventTypeDustBurning
 	EventTypeSpectrumStats
+
+	EventTypeContractReserveDeduction = 13
+	EventTypeOracleQueryStatusChange  = 14
 )
 
 const EventTypeCustomMessage = 255
@@ -290,7 +294,93 @@ func (e *ContractMessageEvent) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-const MaxNumberOfSpecialEventsPerTick = 5
+type ContractReserveDeductionEvent struct {
+	DeductionAmount uint64
+	RemainingAmount int64
+	ContractIndex   uint32
+	_               uint32 // padding to match 24-byte C++ struct
+}
+
+func (e *ContractReserveDeductionEvent) UnmarshalBinary(data []byte) error {
+	if len(data) != 24 {
+		return fmt.Errorf("invalid contract reserve deduction event size: expected 24, got %d", len(data))
+	}
+
+	r := bytes.NewReader(data)
+	err := binary.Read(r, binary.LittleEndian, e)
+	if err != nil {
+		return fmt.Errorf("reading contract reserve deduction event: %w", err)
+	}
+
+	return nil
+}
+
+type OracleQueryStatusChangeEvent struct {
+	QueryingEntity [32]byte
+	QueryID        int64
+	InterfaceIndex uint32
+	Type           uint8
+	Status         uint8
+}
+
+// OracleQueryStatus constants
+const (
+	OracleQueryStatusPending      = 1
+	OracleQueryStatusCommitted    = 2
+	OracleQueryStatusSuccess      = 3
+	OracleQueryStatusTimeout      = 4
+	OracleQueryStatusUnresolvable = 5
+
+	OracleQueryTypeContractQuery        = 0
+	OracleQueryTypeContractSubscription = 1
+	OracleQueryTypeUserQuery            = 2
+)
+
+func (e *OracleQueryStatusChangeEvent) UnmarshalBinary(data []byte) error {
+	if len(data) != 46 {
+		return fmt.Errorf("invalid oracle query status change event size: expected 46, got %d", len(data))
+	}
+
+	r := bytes.NewReader(data)
+	err := binary.Read(r, binary.LittleEndian, e)
+	if err != nil {
+		return fmt.Errorf("reading oracle query status change event: %w", err)
+	}
+
+	return nil
+}
+
+func (e *OracleQueryStatusChangeEvent) StatusString() string {
+	switch e.Status {
+	case OracleQueryStatusPending:
+		return "pending"
+	case OracleQueryStatusCommitted:
+		return "committed"
+	case OracleQueryStatusSuccess:
+		return "success"
+	case OracleQueryStatusTimeout:
+		return "timeout"
+	case OracleQueryStatusUnresolvable:
+		return "unresolvable"
+	default:
+		return "unknown"
+	}
+}
+
+func (e *OracleQueryStatusChangeEvent) TypeString() string {
+	switch e.Type {
+	case OracleQueryTypeContractQuery:
+		return "contract_query"
+	case OracleQueryTypeContractSubscription:
+		return "contract_subscription"
+	case OracleQueryTypeUserQuery:
+		return "user_query"
+	default:
+		return "unknown"
+	}
+}
+
+const MaxNumberOfSpecialEventsPerTick = 6
 
 type TickTransactionEventIDs struct {
 	FromEventID [nodetypes.MaxNumberOfTransactionsPerTick + MaxNumberOfSpecialEventsPerTick]int64
