@@ -60,7 +60,7 @@ func TestContractReserveDeductionEvent_UnmarshalBinary(t *testing.T) {
 	var event ContractReserveDeductionEvent
 	err := event.UnmarshalBinary(data)
 	require.NoError(t, err, "unmarshalling binary data")
-	require.Equal(t, uint64(1000), event.DeductionAmount)
+	require.Equal(t, uint64(1000), event.DeductedAmount)
 	require.Equal(t, int64(5000), event.RemainingAmount)
 	require.Equal(t, uint32(42), event.ContractIndex)
 }

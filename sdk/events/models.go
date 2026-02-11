@@ -295,7 +295,7 @@ func (e *ContractMessageEvent) UnmarshalBinary(data []byte) error {
 }
 
 type ContractReserveDeductionEvent struct {
-	DeductionAmount uint64
+	DeductedAmount  uint64
 	RemainingAmount int64
 	ContractIndex   uint32
 	_               uint32 // padding to match 24-byte C++ struct
