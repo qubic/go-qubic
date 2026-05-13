@@ -15,6 +15,7 @@ import (
 
 const (
 	MaxNumberOfTransactionsPerTick = 4096
+	MaxNumberOfContracts           = 1024
 )
 
 const (
@@ -37,7 +38,7 @@ type TickData struct {
 	Year               uint8
 	Timelock           [32]byte
 	TransactionDigests [MaxNumberOfTransactionsPerTick][32]byte
-	ContractFees       [MaxNumberOfTransactionsPerTick]int64
+	ContractFees       [MaxNumberOfContracts]int64
 	Signature          [SignatureSize]byte
 }
 
@@ -112,7 +113,7 @@ func (tdc *tickDataConverter) toProto() (*qubicpb.TickData, error) {
 	}, nil
 }
 
-func contractFeesToProto(contractFees [MaxNumberOfTransactionsPerTick]int64) []int64 {
+func contractFeesToProto(contractFees [MaxNumberOfContracts]int64) []int64 {
 	protoContractFees := make([]int64, 0, len(contractFees))
 	for _, fee := range contractFees {
 		if fee == 0 {
