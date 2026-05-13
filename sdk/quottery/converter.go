@@ -1,11 +1,12 @@
 package quottery
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+	"time"
+
 	"github.com/qubic/go-qubic/v2/common"
 	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"time"
 )
 
 var BetInfoConverter betInfoConverter
@@ -16,7 +17,7 @@ func (bic betInfoConverter) ToProto(bi BetInfo) (*qubicpb.BetInfo, error) {
 	var creatorID common.Identity
 	err := creatorID.FromPubKey(bi.Creator, false)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting creator id")
+		return nil, fmt.Errorf("converting creator id: %w", err)
 	}
 
 	description := string(bi.Description[:])
@@ -45,7 +46,7 @@ func (bic betInfoConverter) ToProto(bi BetInfo) (*qubicpb.BetInfo, error) {
 		var providerID common.Identity
 		err := providerID.FromPubKey(providerPubKey, false)
 		if err != nil {
-			return nil, errors.Wrapf(err, "converting provider id with pubkey: %s", providerPubKey)
+			return nil, fmt.Errorf("converting provider id with pubkey: %s: %w", providerPubKey, err)
 		}
 		oi := qubicpb.BetInfo_Oracle{
 			Id:            providerID.String(),
@@ -135,7 +136,7 @@ type basicInfoConverter struct{}
 func (bic basicInfoConverter) ToProto(bi BasicInfo) (*qubicpb.BasicInfo, error) {
 	gameOperatorID, err := common.PubKeyToIdentity(bi.GameOperatorPubKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "converting game operator id with pubkey: %s", bi.GameOperatorPubKey)
+		return nil, fmt.Errorf("converting game operator id with pubkey: %s: %w", bi.GameOperatorPubKey, err)
 	}
 
 	return &qubicpb.BasicInfo{
@@ -183,7 +184,7 @@ func (bobc betOptionBettorsConverter) ToProto(bod BetOptionDetail) (*qubicpb.Bet
 
 		bettor, err := common.PubKeyToIdentity(idBytes)
 		if err != nil {
-			return nil, errors.Wrapf(err, "converting bettor id with pubkey: %s", idBytes)
+			return nil, fmt.Errorf("converting bettor id with pubkey: %s: %w", idBytes, err)
 		}
 
 		bettorIDs = append(bettorIDs, bettor.String())

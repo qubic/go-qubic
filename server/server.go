@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/v2/connector"
 	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"github.com/qubic/go-qubic/v2/sdk/core"
@@ -13,8 +16,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
-	"net"
-	"net/http"
 )
 
 type Server struct {
@@ -57,7 +58,7 @@ func createGrpcServerAndRegisterServices(connector *connector.Connector) *grpc.S
 func (s *Server) Start() error {
 	lis, err := net.Listen("tcp", s.listenAddrGRPC)
 	if err != nil {
-		return errors.Wrap(err, "grpc failed to listen to tcp port")
+		return fmt.Errorf("grpc failed to listen to tcp port: %w", err)
 	}
 
 	go func() {

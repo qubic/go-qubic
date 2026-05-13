@@ -1,7 +1,8 @@
 package hrtypes
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"github.com/qubic/go-qubic/v2/common"
 	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
@@ -11,11 +12,11 @@ func NewSimpleTransferTransaction(sourceID, destinationID string, amount int64, 
 	destID := common.Identity(destinationID)
 	srcPubKey, err := srcID.ToPubKey(false)
 	if err != nil {
-		return nodetypes.Transaction{}, errors.Wrap(err, "converting src id string to pubkey")
+		return nodetypes.Transaction{}, fmt.Errorf("converting src id string to pubkey: %w", err)
 	}
 	destPubKey, err := destID.ToPubKey(false)
 	if err != nil {
-		return nodetypes.Transaction{}, errors.Wrap(err, "converting dest id string to pubkey")
+		return nodetypes.Transaction{}, fmt.Errorf("converting dest id string to pubkey: %w", err)
 	}
 
 	return nodetypes.Transaction{

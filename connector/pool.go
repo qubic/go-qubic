@@ -3,15 +3,16 @@ package connector
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/silenceper/pool"
 	"io"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/silenceper/pool"
 )
 
 type connPool struct {
@@ -37,7 +38,7 @@ func newConnectionPool(config PoolConfig, factoryFunc func() (interface{}, error
 	}
 	chPool, err := pool.NewChannelPool(&cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating channel pool")
+		return nil, fmt.Errorf("creating channel pool: %w", err)
 	}
 
 	return &connPool{chPool: chPool}, nil
@@ -46,7 +47,7 @@ func newConnectionPool(config PoolConfig, factoryFunc func() (interface{}, error
 func (c *connPool) Get() (*connHandler, error) {
 	v, err := c.chPool.Get()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting pooled conn handler")
+		return nil, fmt.Errorf("getting pooled conn handler: %w", err)
 	}
 
 	return v.(*connHandler), nil
@@ -92,18 +93,18 @@ func (pcf *poolConnectionFactory) Connect() (interface{}, error) {
 
 	peer, err := pcf.getNewRandomPeer(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting new random peer")
+		return nil, fmt.Errorf("getting new random peer: %w", err)
 	}
 
 	addr := net.JoinHostPort(peer, pcf.ConnectionPort)
 	conn, err := net.DialTimeout("tcp", addr, pcf.ConnectionTimeout)
 	if err != nil {
-		return nil, errors.Wrapf(err, "dialing %s", addr)
+		return nil, fmt.Errorf("dialing %s: %w", addr, err)
 	}
 
 	ch, err := newConnHandler(conn, pcf.HandlerRequestTimeout)
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating new conn handler for address %s", addr)
+		return nil, fmt.Errorf("creating new conn handler for address %s: %w", addr, err)
 	}
 
 	fmt.Printf("connected to: %s\n", peer)
@@ -128,24 +129,24 @@ type nodeResponse struct {
 func (pcf *poolConnectionFactory) getNewRandomPeer(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pcf.PoolFetcherURL, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "creating new request")
+		return "", fmt.Errorf("creating new request: %w", err)
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "getting peers from node fetcher")
+		return "", fmt.Errorf("getting peers from node fetcher: %w", err)
 	}
 	defer res.Body.Close()
 
 	var resp statusResponse
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "reading response body")
+		return "", fmt.Errorf("reading response body: %w", err)
 	}
 
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "unmarshalling response")
+		return "", fmt.Errorf("unmarshalling response: %w", err)
 	}
 
 	if len(resp.ReliableNodes) == 0 {
@@ -179,12 +180,12 @@ func (scf *soloConnectionFactory) Connect() (interface{}, error) {
 	addr := net.JoinHostPort(scf.ConnectionIP, scf.ConnectionPort)
 	conn, err := net.DialTimeout("tcp", addr, scf.ConnectionTimeout)
 	if err != nil {
-		return nil, errors.Wrapf(err, "dialing %s", addr)
+		return nil, fmt.Errorf("dialing %s: %w", addr, err)
 	}
 
 	ch, err := newConnHandler(conn, scf.HandlerRequestTimeout)
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating new conn handler for address %s", addr)
+		return nil, fmt.Errorf("creating new conn handler for address %s: %w", addr, err)
 	}
 
 	fmt.Printf("connected to: %s\n", scf.ConnectionIP)

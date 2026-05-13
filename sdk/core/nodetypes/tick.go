@@ -3,13 +3,14 @@ package nodetypes
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"github.com/pkg/errors"
+	"fmt"
+	"io"
+	"time"
+
 	"github.com/qubic/go-qubic/v2/common"
 	"github.com/qubic/go-qubic/v2/connector"
 	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
-	"time"
 )
 
 const (
@@ -45,7 +46,7 @@ func (td *TickData) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading tick data from reader")
+		return fmt.Errorf("reading tick data from reader: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -53,12 +54,12 @@ func (td *TickData) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != TickDataTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", TickDataTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", TickDataTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, td)
 	if err != nil {
-		return errors.Wrap(err, "reading tick data from reader")
+		return fmt.Errorf("reading tick data from reader: %w", err)
 	}
 
 	return nil
@@ -76,7 +77,7 @@ func (td *TickData) ToProto() (*qubicpb.TickData, error) {
 	tdc := tickDataConverter{rawTd: *td}
 	tdPb, err := tdc.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling tick data converter to proto")
+		return nil, fmt.Errorf("calling tick data converter to proto: %w", err)
 	}
 
 	return tdPb, nil
@@ -96,7 +97,7 @@ func (tdc *tickDataConverter) toProto() (*qubicpb.TickData, error) {
 
 	transactionIds, err := common.PubKeysToIdentitiesString(tdc.rawTd.TransactionDigests[:], true)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting transaction ids from digests")
+		return nil, fmt.Errorf("getting transaction ids from digests: %w", err)
 	}
 
 	return &qubicpb.TickData{
@@ -136,16 +137,16 @@ func (ti *TickInfo) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type != CurrentTickInfoTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", CurrentTickInfoTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", CurrentTickInfoTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, ti)
 	if err != nil {
-		return errors.Wrap(err, "reading tick data from reader")
+		return fmt.Errorf("reading tick data from reader: %w", err)
 	}
 	return nil
 }

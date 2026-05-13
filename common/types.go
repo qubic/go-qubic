@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/cloudflare/circl/xof/k12"
-	"github.com/pkg/errors"
 	"unicode"
+
+	"github.com/cloudflare/circl/xof/k12"
 )
 
 type Identity string
@@ -32,13 +33,13 @@ func (i *Identity) FromPubKey(pubKey [32]byte, isLowerCase bool) error {
 	h := k12.NewDraft10([]byte{})
 	_, err := h.Write(pubKey[:])
 	if err != nil {
-		return errors.Wrap(err, "writing msg to k12")
+		return fmt.Errorf("writing msg to k12: %w", err)
 	}
 
 	var identityBytesChecksum [3]byte
 	_, err = h.Read(identityBytesChecksum[:])
 	if err != nil {
-		return errors.Wrap(err, "reading hash from k12")
+		return fmt.Errorf("reading hash from k12: %w", err)
 	}
 
 	var identityBytesChecksumInt uint64
@@ -118,7 +119,7 @@ func PubKeysToIdentities(pubKeys [][32]byte, isLowercase bool) ([]Identity, erro
 		}
 		id, err := getIDFrom32Bytes(identity, isLowercase)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting identity from pubKey hex %s", hex.EncodeToString(identity[:]))
+			return nil, fmt.Errorf("getting identity from pubKey hex %s: %w", hex.EncodeToString(identity[:]), err)
 		}
 		identities = append(identities, id)
 	}
@@ -133,7 +134,7 @@ func PubKeysToIdentitiesString(pubKeys [][32]byte, isLowercase bool) ([]string, 
 		}
 		id, err := getIDFrom32Bytes(identity, isLowercase)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting identity from pubKey hex %s", hex.EncodeToString(identity[:]))
+			return nil, fmt.Errorf("getting identity from pubKey hex %s: %w", hex.EncodeToString(identity[:]), err)
 		}
 		identities = append(identities, id.String())
 	}
@@ -156,7 +157,7 @@ func BinarySerializeLE(data interface{}) ([]byte, error) {
 	var buff bytes.Buffer
 	err := binary.Write(&buff, binary.LittleEndian, data)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing data to buff")
+		return nil, fmt.Errorf("writing data to buff: %w", err)
 	}
 
 	return buff.Bytes(), nil
@@ -166,7 +167,7 @@ func getIDFrom32Bytes(data [32]byte, isLowercase bool) (Identity, error) {
 	var id Identity
 	err := id.FromPubKey(data, isLowercase)
 	if err != nil {
-		return "", errors.Wrap(err, "getting id from pubkey")
+		return "", fmt.Errorf("getting id from pubkey: %w", err)
 	}
 
 	return id, nil

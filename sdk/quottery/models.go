@@ -2,9 +2,10 @@ package quottery
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/v2/connector"
+	"fmt"
 	"io"
+
+	"github.com/qubic/go-qubic/v2/connector"
 )
 
 const contractID = 2
@@ -63,7 +64,7 @@ func (bi *BetInfo) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery bet info header")
+		return fmt.Errorf("reading quottery bet info header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -71,12 +72,12 @@ func (bi *BetInfo) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, bi)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery bet info data")
+		return fmt.Errorf("reading quottery bet info data: %w", err)
 	}
 
 	return nil
@@ -92,7 +93,7 @@ func (ab *ActiveBets) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery active bets header")
+		return fmt.Errorf("reading quottery active bets header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -100,12 +101,12 @@ func (ab *ActiveBets) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, ab)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery active bets count")
+		return fmt.Errorf("reading quottery active bets count: %w", err)
 	}
 
 	return nil
@@ -135,7 +136,7 @@ func (bi *BasicInfo) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery basic info header")
+		return fmt.Errorf("reading quottery basic info header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -143,12 +144,12 @@ func (bi *BasicInfo) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, bi)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery basic info data")
+		return fmt.Errorf("reading quottery basic info data: %w", err)
 	}
 
 	return nil
@@ -163,7 +164,7 @@ func (bod *BetOptionDetail) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery bet option detail header")
+		return fmt.Errorf("reading quottery bet option detail header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -171,12 +172,12 @@ func (bod *BetOptionDetail) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, bod)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery bet option detail data")
+		return fmt.Errorf("reading quottery bet option detail data: %w", err)
 	}
 
 	return nil

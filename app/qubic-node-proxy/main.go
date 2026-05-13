@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/v2/connector"
-	"github.com/qubic/go-qubic/v2/server"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/qubic/go-qubic/v2/connector"
+	"github.com/qubic/go-qubic/v2/server"
 
 	"github.com/ardanlabs/conf"
 )
@@ -50,24 +52,24 @@ func run() error {
 		case errors.Is(err, conf.ErrHelpWanted):
 			usage, err := conf.Usage(prefix, &cfg)
 			if err != nil {
-				return errors.Wrap(err, "generating config usage")
+				return fmt.Errorf("generating config usage: %w", err)
 			}
 			log.Println(usage)
 			return nil
 		case errors.Is(err, conf.ErrVersionWanted):
 			version, err := conf.VersionString(prefix, &cfg)
 			if err != nil {
-				return errors.Wrap(err, "generating config version")
+				return fmt.Errorf("generating config version: %w", err)
 			}
 			log.Println(version)
 			return nil
 		}
-		return errors.Wrap(err, "parsing config")
+		return fmt.Errorf("parsing config: %w", err)
 	}
 
 	out, err := conf.String(&cfg)
 	if err != nil {
-		return errors.Wrap(err, "generating config for output")
+		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Printf("main: Config :\n%v\n", out)
 
@@ -88,13 +90,13 @@ func run() error {
 	}
 	conn, err := connector.NewPoolConnector(pfConfig, cConfig, pConfig)
 	if err != nil {
-		return errors.Wrap(err, "creating pool connector")
+		return fmt.Errorf("creating pool connector: %w", err)
 	}
 
 	srv := server.NewServer(cfg.Server.GrpcListenAddr, cfg.Server.HttpListenAddr, conn)
 	err = srv.Start()
 	if err != nil {
-		return errors.Wrap(err, "starting server")
+		return fmt.Errorf("starting server: %w", err)
 	}
 
 	shutdown := make(chan os.Signal, 1)

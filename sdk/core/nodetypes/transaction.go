@@ -5,11 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/pkg/errors"
+	"fmt"
+	"io"
+
 	"github.com/qubic/go-qubic/v2/common"
 	"github.com/qubic/go-qubic/v2/connector"
 	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
-	"io"
 )
 
 const (
@@ -34,41 +35,41 @@ func (tx *Transaction) MarshallBinary() ([]byte, error) {
 	var buff bytes.Buffer
 	_, err := buff.Write(tx.SourcePublicKey[:])
 	if err != nil {
-		return nil, errors.Wrap(err, "writing source public key to buffer")
+		return nil, fmt.Errorf("writing source public key to buffer: %w", err)
 	}
 
 	_, err = buff.Write(tx.DestinationPublicKey[:])
 	if err != nil {
-		return nil, errors.Wrap(err, "writing destination public key to buffer")
+		return nil, fmt.Errorf("writing destination public key to buffer: %w", err)
 	}
 	err = binary.Write(&buff, binary.LittleEndian, tx.Amount)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing amount to buf")
+		return nil, fmt.Errorf("writing amount to buf: %w", err)
 	}
 
 	err = binary.Write(&buff, binary.LittleEndian, tx.Tick)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing tick to buf")
+		return nil, fmt.Errorf("writing tick to buf: %w", err)
 	}
 
 	err = binary.Write(&buff, binary.LittleEndian, tx.InputType)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing input type to buf")
+		return nil, fmt.Errorf("writing input type to buf: %w", err)
 	}
 
 	err = binary.Write(&buff, binary.LittleEndian, tx.InputSize)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing input size to buf")
+		return nil, fmt.Errorf("writing input size to buf: %w", err)
 	}
 
 	_, err = buff.Write(tx.Input)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing input to buffer")
+		return nil, fmt.Errorf("writing input to buffer: %w", err)
 	}
 
 	_, err = buff.Write(tx.Signature[:])
 	if err != nil {
-		return nil, errors.Wrap(err, "writing signature to buffer")
+		return nil, fmt.Errorf("writing signature to buffer: %w", err)
 	}
 
 	return buff.Bytes(), nil
@@ -77,13 +78,13 @@ func (tx *Transaction) MarshallBinary() ([]byte, error) {
 func (tx *Transaction) GetUnsignedDigest() ([32]byte, error) {
 	serialized, err := tx.MarshallBinary()
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "marshalling tx data")
+		return [32]byte{}, fmt.Errorf("marshalling tx data: %w", err)
 	}
 
 	// create digest with data without signature
 	digest, err := common.K12Hash(serialized[:len(serialized)-64])
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "hashing tx data")
+		return [32]byte{}, fmt.Errorf("hashing tx data: %w", err)
 	}
 
 	return digest, nil
@@ -92,43 +93,43 @@ func (tx *Transaction) GetUnsignedDigest() ([32]byte, error) {
 func (tx *Transaction) UnmarshallFromReader(r io.Reader) error {
 	err := binary.Read(r, binary.LittleEndian, &tx.SourcePublicKey)
 	if err != nil {
-		return errors.Wrap(err, "reading source public key from reader")
+		return fmt.Errorf("reading source public key from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.DestinationPublicKey)
 	if err != nil {
-		return errors.Wrap(err, "reading destination public key from reader")
+		return fmt.Errorf("reading destination public key from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.Amount)
 	if err != nil {
-		return errors.Wrap(err, "reading amount from reader")
+		return fmt.Errorf("reading amount from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.Tick)
 	if err != nil {
-		return errors.Wrap(err, "reading tick from reader")
+		return fmt.Errorf("reading tick from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.InputType)
 	if err != nil {
-		return errors.Wrap(err, "reading input type from reader")
+		return fmt.Errorf("reading input type from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.InputSize)
 	if err != nil {
-		return errors.Wrap(err, "reading input size from reader")
+		return fmt.Errorf("reading input size from reader: %w", err)
 	}
 
 	tx.Input = make([]byte, tx.InputSize)
 	err = binary.Read(r, binary.LittleEndian, &tx.Input)
 	if err != nil {
-		return errors.Wrap(err, "reading input from reader")
+		return fmt.Errorf("reading input from reader: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &tx.Signature)
 	if err != nil {
-		return errors.Wrap(err, "reading signature from reader")
+		return fmt.Errorf("reading signature from reader: %w", err)
 	}
 
 	return nil
@@ -137,12 +138,12 @@ func (tx *Transaction) UnmarshallFromReader(r io.Reader) error {
 func (tx *Transaction) Digest() ([32]byte, error) {
 	serialized, err := tx.MarshallBinary()
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "marshalling tx data")
+		return [32]byte{}, fmt.Errorf("marshalling tx data: %w", err)
 	}
 
 	digest, err := common.K12Hash(serialized)
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "hashing tx data")
+		return [32]byte{}, fmt.Errorf("hashing tx data: %w", err)
 	}
 
 	return digest, nil
@@ -151,7 +152,7 @@ func (tx *Transaction) Digest() ([32]byte, error) {
 func (tx *Transaction) EncodeToBase64() (string, error) {
 	txPacket, err := tx.MarshallBinary()
 	if err != nil {
-		return "", errors.Wrap(err, "binary marshalling")
+		return "", fmt.Errorf("binary marshalling: %w", err)
 	}
 
 	return base64.StdEncoding.EncodeToString(txPacket[:]), nil
@@ -161,7 +162,7 @@ func (tx *Transaction) ToProto() (*qubicpb.Transaction, error) {
 	tc := txConverter{rawTx: *tx}
 	txPb, err := tc.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling transaction converter to proto")
+		return nil, fmt.Errorf("calling transaction converter to proto: %w", err)
 	}
 
 	return txPb, nil
@@ -174,22 +175,22 @@ type txConverter struct {
 func (tc *txConverter) toProto() (*qubicpb.Transaction, error) {
 	digest, err := tc.rawTx.Digest()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tx digest")
+		return nil, fmt.Errorf("getting tx digest: %w", err)
 	}
 
 	id, err := common.DigestToTxID(digest)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tx id")
+		return nil, fmt.Errorf("getting tx id: %w", err)
 	}
 
 	sourceID, err := common.PubKeyToIdentity(tc.rawTx.SourcePublicKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tx source id")
+		return nil, fmt.Errorf("getting tx source id: %w", err)
 	}
 
 	destID, err := common.PubKeyToIdentity(tc.rawTx.DestinationPublicKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tx dest id")
+		return nil, fmt.Errorf("getting tx dest id: %w", err)
 	}
 
 	return &qubicpb.Transaction{
@@ -213,7 +214,7 @@ func (txs *Transactions) UnmarshallFromReader(r io.Reader) error {
 		var header connector.RequestResponseHeader
 		err := binary.Read(r, binary.BigEndian, &header)
 		if err != nil {
-			return errors.Wrap(err, "reading header")
+			return fmt.Errorf("reading header: %w", err)
 		}
 
 		if header.Type == connector.EndResponse {
@@ -221,14 +222,14 @@ func (txs *Transactions) UnmarshallFromReader(r io.Reader) error {
 		}
 
 		if header.Type != TickTransactionsTypeResponse {
-			return errors.Errorf("Invalid header type, expected %d, found %d", TickTransactionsTypeResponse, header.Type)
+			return fmt.Errorf("Invalid header type, expected %d, found %d", TickTransactionsTypeResponse, header.Type)
 		}
 
 		var tx Transaction
 
 		err = tx.UnmarshallFromReader(r)
 		if err != nil {
-			return errors.Wrap(err, "unmarshalling transaction")
+			return fmt.Errorf("unmarshalling transaction: %w", err)
 		}
 
 		*txs = append(*txs, tx)
@@ -241,7 +242,7 @@ func (txs *Transactions) ToProto() (*qubicpb.TickTransactions, error) {
 	ttc := tickTxsConverter{rawTxs: *txs}
 	txsPb, err := ttc.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling tick transactions converter to proto")
+		return nil, fmt.Errorf("calling tick transactions converter to proto: %w", err)
 	}
 
 	return txsPb, nil
@@ -256,7 +257,7 @@ func (ttc *tickTxsConverter) toProto() (*qubicpb.TickTransactions, error) {
 	for i, tx := range ttc.rawTxs {
 		protoTx, err := tx.ToProto()
 		if err != nil {
-			return nil, errors.Wrapf(err, "converting to proto tx index: %d", i)
+			return nil, fmt.Errorf("converting to proto tx index: %d: %w", i, err)
 		}
 		convertedTxs[i] = protoTx
 	}
@@ -277,37 +278,37 @@ func (ts *TransactionStatus) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type != TxStatusTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", TxStatusTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", TxStatusTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &ts.CurrentTickOfNode)
 	if err != nil {
-		return errors.Wrap(err, "reading current tick of node")
+		return fmt.Errorf("reading current tick of node: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &ts.Tick)
 	if err != nil {
-		return errors.Wrap(err, "reading tick")
+		return fmt.Errorf("reading tick: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &ts.TxCount)
 	if err != nil {
-		return errors.Wrap(err, "reading tx count")
+		return fmt.Errorf("reading tx count: %w", err)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &ts.MoneyFlew)
 	if err != nil {
-		return errors.Wrap(err, "reading reading money flew")
+		return fmt.Errorf("reading reading money flew: %w", err)
 	}
 
 	ts.TransactionDigests = make([][32]byte, ts.TxCount)
 	err = binary.Read(r, binary.LittleEndian, &ts.TransactionDigests)
 	if err != nil {
-		return errors.Wrap(err, "reading tx digests")
+		return fmt.Errorf("reading tx digests: %w", err)
 	}
 
 	return nil
@@ -317,7 +318,7 @@ func (ts *TransactionStatus) ToProto() (*qubicpb.TickTransactionsStatus, error) 
 	tsc := transactionsStatusConverter{rawTxStatus: *ts}
 	tsPb, err := tsc.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling tick transactions status converter to proto")
+		return nil, fmt.Errorf("calling tick transactions status converter to proto: %w", err)
 	}
 
 	return tsPb, nil
@@ -333,7 +334,7 @@ func (tsc *transactionsStatusConverter) toProto() (*qubicpb.TickTransactionsStat
 	for index, digest := range tsc.rawTxStatus.TransactionDigests {
 		id, err := common.DigestToTxID(digest)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting tx id for tx with digest hex: %s", hex.EncodeToString(digest[:]))
+			return nil, fmt.Errorf("getting tx id for tx with digest hex: %s: %w", hex.EncodeToString(digest[:]), err)
 		}
 
 		moneyFlew := tsc.getMoneyFlewFromBits(index)

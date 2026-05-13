@@ -8,7 +8,6 @@ require (
 	github.com/cloudflare/fourq v0.0.0-20260424232836-f176cb2c40b1
 	github.com/google/go-cmp v0.7.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
-	github.com/pkg/errors v0.9.1
 	github.com/silenceper/pool v1.0.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/genproto/googleapis/api v0.0.0-20260511170946-3700d4141b60

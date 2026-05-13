@@ -3,7 +3,7 @@ package connector
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/pkg/errors"
+	"fmt"
 	"io"
 	"math/rand"
 )
@@ -53,7 +53,7 @@ func (h *RequestResponseHeader) RandomizeDejaVu() {
 func (h *RequestResponseHeader) UnmarshallFromReader(r io.Reader) error {
 	err := binary.Read(r, binary.BigEndian, h)
 	if err != nil {
-		return errors.Wrap(err, "reading quottery basic info header")
+		return fmt.Errorf("reading quottery basic info header: %w", err)
 	}
 
 	return nil
@@ -71,7 +71,7 @@ func newChainRequest(requestType uint8, requestData interface{}) chainRequest {
 func (r *chainRequest) serialize() ([]byte, error) {
 	serializedReqData, err := binarySerialize(r.requestData)
 	if err != nil {
-		return nil, errors.Wrap(err, "serializing req data")
+		return nil, fmt.Errorf("serializing req data: %w", err)
 	}
 
 	var header RequestResponseHeader
@@ -91,7 +91,7 @@ func (r *chainRequest) serialize() ([]byte, error) {
 
 	serializedHeaderData, err := binarySerialize(header)
 	if err != nil {
-		return nil, errors.Wrap(err, "serializing header data")
+		return nil, fmt.Errorf("serializing header data: %w", err)
 	}
 
 	serializedPacket := make([]byte, 0, packetSize)
@@ -109,7 +109,7 @@ func binarySerialize(data interface{}) ([]byte, error) {
 	var buff bytes.Buffer
 	err := binary.Write(&buff, binary.LittleEndian, data)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing data to buff")
+		return nil, fmt.Errorf("writing data to buff: %w", err)
 	}
 
 	return buff.Bytes(), nil
@@ -129,12 +129,12 @@ func newSmartContractRequest(reqContractFunction RequestContractFunction, reques
 func (r *smartContractRequest) serialize() ([]byte, error) {
 	serializedReqData, err := binarySerialize(r.requestData)
 	if err != nil {
-		return nil, errors.Wrap(err, "serializing req data")
+		return nil, fmt.Errorf("serializing req data: %w", err)
 	}
 
 	serializedReqContractFunction, err := binarySerialize(r.reqContractFunction)
 	if err != nil {
-		return nil, errors.Wrap(err, "serializing req contract function")
+		return nil, fmt.Errorf("serializing req contract function: %w", err)
 	}
 
 	var header RequestResponseHeader
@@ -151,7 +151,7 @@ func (r *smartContractRequest) serialize() ([]byte, error) {
 
 	serializedHeaderData, err := binarySerialize(header)
 	if err != nil {
-		return nil, errors.Wrap(err, "serializing header data")
+		return nil, fmt.Errorf("serializing header data: %w", err)
 	}
 
 	serializedPacket := make([]byte, 0, packetSize)

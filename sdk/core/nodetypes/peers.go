@@ -2,10 +2,11 @@ package nodetypes
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/v2/connector"
+	"fmt"
 	"io"
 	"net"
+
+	"github.com/qubic/go-qubic/v2/connector"
 )
 
 const (
@@ -18,18 +19,18 @@ func (pp *PublicPeers) UnmarshallFromReader(r io.Reader) error {
 	var header connector.RequestResponseHeader
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type != InitialHandshakeTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", InitialHandshakeTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", InitialHandshakeTypeResponse, header.Type)
 	}
 
 	var peers [4][4]byte
 
 	err = binary.Read(r, binary.LittleEndian, &peers)
 	if err != nil {
-		return errors.Wrap(err, "reading public peers from reader")
+		return fmt.Errorf("reading public peers from reader: %w", err)
 	}
 
 	for _, peer := range peers {
@@ -47,13 +48,13 @@ func (pp *PublicPeers) UnmarshallFromReader(r io.Reader) error {
 	var nextHeader connector.RequestResponseHeader
 	err = binary.Read(r, binary.BigEndian, &nextHeader)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	ignoredBytes := make([]byte, nextHeader.GetSize()-uint32(binary.Size(nextHeader)))
 	_, err = r.Read(ignoredBytes)
 	if err != nil {
-		return errors.Wrap(err, "reading ignored bytes")
+		return fmt.Errorf("reading ignored bytes: %w", err)
 	}
 
 	return nil

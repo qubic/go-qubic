@@ -7,7 +7,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/qubic/go-qubic/v2/connector"
 	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"github.com/qubic/go-qubic/v2/sdk/core"
@@ -46,7 +45,7 @@ func (c *Client) GetTickTransactionEventsRange(ctx context.Context, tickNumber, 
 	var result TransactionEventsRange
 	err := c.connector.PerformCoreRequestWithPasscode(ctx, TransactionEventsRangeTypeRequest, c.passcodes, &request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing core request")
+		return nil, fmt.Errorf("performing core request: %w", err)
 	}
 
 	return &result, nil
@@ -71,7 +70,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, fromEventID, toEventID uint
 	result := Events{Count: int64(toEventID-fromEventID) + 1}
 	err := c.connector.PerformCoreRequestWithPasscode(ctx, EventTypeRequest, c.passcodes, &request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing core request")
+		return nil, fmt.Errorf("performing core request: %w", err)
 	}
 
 	return &result, nil
@@ -83,7 +82,7 @@ func (c *Client) GetRangeEvents(ctx context.Context, fromEventID, toEventID uint
 func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	td, err := c.coreClient.GetTickData(ctx, tickNumber)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick data")
+		return nil, fmt.Errorf("getting tick data: %w", err)
 	}
 
 	if len(td.TransactionIds) == 0 {
@@ -95,7 +94,7 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (
 	for txIndex, txID := range td.TransactionIds {
 		idRange, err := c.GetTickTransactionEventsRange(ctx, tickNumber, uint32(txIndex))
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting tick transaction events range for txIndex: %d", txIndex)
+			return nil, fmt.Errorf("getting tick transaction events range for txIndex: %d: %w", txIndex, err)
 		}
 
 		if idRange.FromEventID == -1 || idRange.NumberOfEvents == -1 {
@@ -114,13 +113,13 @@ func (c *Client) GetTickEventsOneByOne(ctx context.Context, tickNumber uint32) (
 
 				evs, err := c.GetRangeEvents(ctx, eventID, eventID)
 				if err != nil {
-					return nil, errors.Wrapf(err, "getting events for txIndex: %d, from event id: %d, to event id: %d", txIndex, from, to)
+					return nil, fmt.Errorf("getting events for txIndex: %d, from event id: %d, to event id: %d: %w", txIndex, from, to, err)
 				}
 
 				return evs, nil
 			}(i)
 			if err != nil {
-				return nil, errors.Wrapf(err, "getting events for txIndex: %d, event id: %d", txIndex, i)
+				return nil, fmt.Errorf("getting events for txIndex: %d, event id: %d: %w", txIndex, i, err)
 			}
 
 			for _, ev := range evs.Items {
@@ -153,7 +152,7 @@ func (r *getTickEventsRequest) AddPasscode(passcode [4]uint64) {
 func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb.TickEvents, error) {
 	td, err := c.coreClient.GetTickData(ctx, tickNumber)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick data")
+		return nil, fmt.Errorf("getting tick data: %w", err)
 	}
 
 	if len(td.TransactionIds) == 0 {
@@ -167,7 +166,7 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 	var result TickTransactionEventIDs
 	err = c.connector.PerformCoreRequestWithPasscode(ctx, TickTransactionEventsIDsTypeRequest, c.passcodes, &req, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing core request")
+		return nil, fmt.Errorf("performing core request: %w", err)
 	}
 
 	var startEventId int64 = math.MaxInt64
@@ -182,7 +181,7 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 		}
 
 		if result.FromEventID[i] == -2 || result.FromEventID[i] == -3 {
-			return nil, errors.Errorf("From event id value %d inconsistent node", result.FromEventID[i])
+			return nil, fmt.Errorf("From event id value %d inconsistent node", result.FromEventID[i])
 		}
 
 		addEventIDsToMap(txForEventID, result.FromEventID[i], result.Length[i], td.TransactionIds[i])
@@ -200,7 +199,7 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 
 	events, err := c.GetRangeEvents(ctx, uint64(startEventId), uint64(endEventId))
 	if err != nil {
-		return nil, errors.Wrap(err, "getting range events")
+		return nil, fmt.Errorf("getting range events: %w", err)
 	}
 
 	eventsByTxID := make(map[string]*qubicpb.TransactionEvents)
