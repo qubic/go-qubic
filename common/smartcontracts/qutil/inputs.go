@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
+	"github.com/qubic/go-qubic/v2/common"
 )
 
 const (

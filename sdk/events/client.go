@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
-	"github.com/qubic/go-qubic/sdk/core"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
+	"github.com/qubic/go-qubic/v2/sdk/core"
 )
 
 type Client struct {
@@ -175,7 +175,7 @@ func (c *Client) GetTickEvents(ctx context.Context, tickNumber uint32) (*qubicpb
 
 	txForEventID := make(map[int64]string)
 
-	// this loop do not go over special events (init_sc, begin_epoch, begin_tick, end_tick, end_epoch which are starting at pos 1024)
+	// this loop do not go over special events (init_sc, begin_epoch, begin_tick, end_tick, end_epoch which are starting at pos MaxNumberOfTransactionsPerTick)
 	for i := range len(td.TransactionIds) {
 		if result.FromEventID[i] == -1 {
 			continue

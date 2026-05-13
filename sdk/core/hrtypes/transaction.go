@@ -2,8 +2,8 @@ package hrtypes
 
 import (
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/sdk/core/nodetypes"
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
 
 func NewSimpleTransferTransaction(sourceID, destinationID string, amount int64, targetTick uint32) (nodetypes.Transaction, error) {

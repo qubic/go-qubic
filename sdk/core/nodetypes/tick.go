@@ -4,16 +4,16 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"time"
 )
 
 const (
-	MaxNumberOfTransactionsPerTick = 1024
+	MaxNumberOfTransactionsPerTick = 4096
 )
 
 const (
@@ -36,7 +36,7 @@ type TickData struct {
 	Year               uint8
 	Timelock           [32]byte
 	TransactionDigests [MaxNumberOfTransactionsPerTick][32]byte
-	ContractFees       [1024]int64
+	ContractFees       [MaxNumberOfTransactionsPerTick]int64
 	Signature          [SignatureSize]byte
 }
 
@@ -111,7 +111,7 @@ func (tdc *tickDataConverter) toProto() (*qubicpb.TickData, error) {
 	}, nil
 }
 
-func contractFeesToProto(contractFees [1024]int64) []int64 {
+func contractFeesToProto(contractFees [MaxNumberOfTransactionsPerTick]int64) []int64 {
 	protoContractFees := make([]int64, 0, len(contractFees))
 	for _, fee := range contractFees {
 		if fee == 0 {

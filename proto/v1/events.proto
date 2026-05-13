@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package qubic.v1;
 
-option go_package = "github.com/qubic/go-qubic/v1/qubicpb";
+option go_package = "github.com/qubic/go-qubic/v2/proto/v1;qubicpb";
 
 message Event {
   message Header {

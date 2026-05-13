@@ -7,8 +7,8 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
-	"github.com/qubic/go-qubic/sdk/core/nodetypes"
+	"github.com/qubic/go-qubic/v2/connector"
+	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
 
 const (

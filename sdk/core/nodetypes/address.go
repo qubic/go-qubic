@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"io"
 )
 

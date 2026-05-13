@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/sdk/core/nodetypes"
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
 
 const Address = "EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVWRF"

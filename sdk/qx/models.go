@@ -3,7 +3,7 @@ package qx
 import (
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
+	"github.com/qubic/go-qubic/v2/connector"
 	"io"
 )
 

@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
-	"github.com/qubic/go-qubic/server"
+	"github.com/qubic/go-qubic/v2/connector"
+	"github.com/qubic/go-qubic/v2/server"
 	"log"
 	"os"
 	"os/signal"

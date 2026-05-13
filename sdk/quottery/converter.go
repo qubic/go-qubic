@@ -2,8 +2,8 @@ package quottery
 
 import (
 	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"github.com/qubic/go-qubic/v2/common"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
