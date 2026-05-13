@@ -2,7 +2,7 @@ package connector
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -27,7 +27,7 @@ func newConnHandler(conn net.Conn, defaultTimeout time.Duration) (*connHandler, 
 
 	err := ch.handleInitialRequestAndSetPeers(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling initial request")
+		return nil, fmt.Errorf("handling initial request: %w", err)
 	}
 
 	return &ch, nil
@@ -53,12 +53,12 @@ func (ch *connHandler) handleCoreRequest(ctx context.Context, requestType uint8,
 	req := newChainRequest(requestType, requestData)
 	serializedRequest, err := req.serialize()
 	if err != nil {
-		return errors.Wrapf(err, "serializing chainRequest for req type %d", requestType)
+		return fmt.Errorf("serializing chainRequest for req type %d: %w", requestType, err)
 	}
 
 	err = ch.prw.writePacket(ctx, conn, serializedRequest)
 	if err != nil {
-		return errors.Wrapf(err, "sending packet to qubic conn for req type %d", requestType)
+		return fmt.Errorf("sending packet to qubic conn for req type %d: %w", requestType, err)
 	}
 
 	// if dest is nil then we don't care about the response
@@ -68,7 +68,7 @@ func (ch *connHandler) handleCoreRequest(ctx context.Context, requestType uint8,
 
 	err = ch.prw.readPacket(ctx, conn, dest)
 	if err != nil {
-		return errors.Wrapf(err, "reading response for req type %d", requestType)
+		return fmt.Errorf("reading response for req type %d: %w", requestType, err)
 	}
 
 	return nil
@@ -80,19 +80,20 @@ func (ch *connHandler) handleSmartContractRequest(ctx context.Context, reqContra
 	req := newSmartContractRequest(reqContractFunction, requestData)
 	serializedRequest, err := req.serialize()
 	if err != nil {
-		return errors.Wrapf(
-			err,
-			"serializing smart contract request for contract id: %d and input type: %d",
+		return fmt.Errorf(
+			"serializing smart contract request for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
 	err = ch.prw.writePacket(ctx, conn, serializedRequest)
 	if err != nil {
-		return errors.Wrapf(err, "sending smart contract packet to qubic conn for contract id: %d and input type: %d",
+		return fmt.Errorf("sending smart contract packet to qubic conn for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
@@ -103,9 +104,10 @@ func (ch *connHandler) handleSmartContractRequest(ctx context.Context, reqContra
 
 	err = ch.prw.readPacket(ctx, conn, dest)
 	if err != nil {
-		return errors.Wrapf(err, "reading smart contract response for contract id: %d and input type: %d",
+		return fmt.Errorf("reading smart contract response for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
@@ -118,19 +120,20 @@ func (ch *connHandler) handleSmartContractRequestV2(ctx context.Context, reqCont
 	req := newSmartContractRequest(reqContractFunction, requestData)
 	serializedRequest, err := req.serialize()
 	if err != nil {
-		return errors.Wrapf(
-			err,
-			"serializing smart contract request for contract id: %d and input type: %d",
+		return fmt.Errorf(
+			"serializing smart contract request for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
 	err = ch.prw.writePacket(ctx, conn, serializedRequest)
 	if err != nil {
-		return errors.Wrapf(err, "sending smart contract packet to qubic conn for contract id: %d and input type: %d",
+		return fmt.Errorf("sending smart contract packet to qubic conn for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
@@ -141,9 +144,10 @@ func (ch *connHandler) handleSmartContractRequestV2(ctx context.Context, reqCont
 
 	err = ch.prw.readPacket(ctx, conn, dest)
 	if err != nil {
-		return errors.Wrapf(err, "reading smart contract response for contract id: %d and input type: %d",
+		return fmt.Errorf("reading smart contract response for contract id: %d and input type: %d: %w",
 			reqContractFunction.ContractIndex,
 			reqContractFunction.InputType,
+			err,
 		)
 	}
 
@@ -155,7 +159,7 @@ func (ch *connHandler) handleInitialRequestAndSetPeers(ctx context.Context) erro
 	var result PublicPeers
 	err := ch.handleCoreRequest(ctx, initialHandshakeTypeRequest, nil, &result)
 	if err != nil {
-		return errors.Wrap(err, "sending req to node")
+		return fmt.Errorf("sending req to node: %w", err)
 	}
 	ch.peers = result
 

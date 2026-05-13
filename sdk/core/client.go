@@ -2,11 +2,12 @@ package core
 
 import (
 	"context"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
-	"github.com/qubic/go-qubic/sdk/core/nodetypes"
+	"fmt"
+
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
+	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
 
 type Client struct {
@@ -24,12 +25,12 @@ func (c *Client) GetTickInfo(ctx context.Context) (*qubicpb.TickInfo, error) {
 
 	err := c.connector.PerformCoreRequest(ctx, nodetypes.CurrentTickInfoTypeRequest, nil, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	tickInfoPb, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting tickInfo to proto")
+		return nil, fmt.Errorf("converting tickInfo to proto: %w", err)
 	}
 
 	return tickInfoPb, nil
@@ -39,18 +40,18 @@ func (c *Client) GetAddressInfo(ctx context.Context, id string) (*qubicpb.Entity
 	identity := common.Identity(id)
 	pubKey, err := identity.ToPubKey(false)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting identity to public key")
+		return nil, fmt.Errorf("converting identity to public key: %w", err)
 	}
 
 	var result nodetypes.AddressInfo
 	err = c.connector.PerformCoreRequest(ctx, nodetypes.BalanceTypeRequest, pubKey, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	ai, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting address info to proto")
+		return nil, fmt.Errorf("converting address info to proto: %w", err)
 	}
 
 	return ai, nil
@@ -61,12 +62,12 @@ func (c *Client) GetComputors(ctx context.Context) (*qubicpb.Computors, error) {
 
 	err := c.connector.PerformCoreRequest(ctx, nodetypes.ComputorsTypeRequest, nil, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	comps, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting computors to proto")
+		return nil, fmt.Errorf("converting computors to proto: %w", err)
 	}
 
 	return comps, nil
@@ -75,11 +76,11 @@ func (c *Client) GetComputors(ctx context.Context) (*qubicpb.Computors, error) {
 func (c *Client) GetTickQuorumVote(ctx context.Context, tickNumber uint32) (*qubicpb.QuorumVote, error) {
 	tickInfo, err := c.GetTickInfo(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick info")
+		return nil, fmt.Errorf("getting tick info: %w", err)
 	}
 
 	if tickInfo.Tick < tickNumber {
-		return nil, errors.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
+		return nil, fmt.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
 	}
 
 	request := struct {
@@ -91,12 +92,12 @@ func (c *Client) GetTickQuorumVote(ctx context.Context, tickNumber uint32) (*qub
 
 	err = c.connector.PerformCoreRequest(ctx, nodetypes.QuorumTickTypeRequest, request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	tqv, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting tick quorum votes to proto")
+		return nil, fmt.Errorf("converting tick quorum votes to proto: %w", err)
 	}
 
 	return tqv, nil
@@ -105,11 +106,11 @@ func (c *Client) GetTickQuorumVote(ctx context.Context, tickNumber uint32) (*qub
 func (c *Client) GetTickData(ctx context.Context, tickNumber uint32) (*qubicpb.TickData, error) {
 	tickInfo, err := c.GetTickInfo(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick info")
+		return nil, fmt.Errorf("getting tick info: %w", err)
 	}
 
 	if tickInfo.Tick < tickNumber {
-		return nil, errors.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
+		return nil, fmt.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
 	}
 
 	request := struct{ Tick uint32 }{Tick: tickNumber}
@@ -117,12 +118,12 @@ func (c *Client) GetTickData(ctx context.Context, tickNumber uint32) (*qubicpb.T
 	var result nodetypes.TickData
 	err = c.connector.PerformCoreRequest(ctx, nodetypes.TickDataTypeRequest, request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	td, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting tick data to proto")
+		return nil, fmt.Errorf("converting tick data to proto: %w", err)
 	}
 
 	return td, nil
@@ -131,7 +132,7 @@ func (c *Client) GetTickData(ctx context.Context, tickNumber uint32) (*qubicpb.T
 func (c *Client) GetTickTransactions(ctx context.Context, tickNumber uint32) (*qubicpb.TickTransactions, error) {
 	tickData, err := c.GetTickData(ctx, tickNumber)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick data")
+		return nil, fmt.Errorf("getting tick data: %w", err)
 	}
 
 	nrTx := len(tickData.TransactionIds)
@@ -156,12 +157,12 @@ func (c *Client) GetTickTransactions(ctx context.Context, tickNumber uint32) (*q
 	var result nodetypes.Transactions
 	err = c.connector.PerformCoreRequest(ctx, nodetypes.TickTransactionsTypeRequest, requestTickTransactions, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	txs, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting tick transactions to proto")
+		return nil, fmt.Errorf("converting tick transactions to proto: %w", err)
 	}
 
 	return txs, nil
@@ -170,11 +171,11 @@ func (c *Client) GetTickTransactions(ctx context.Context, tickNumber uint32) (*q
 func (c *Client) GetTickTransactionsStatus(ctx context.Context, tickNumber uint32) (*qubicpb.TickTransactionsStatus, error) {
 	tickInfo, err := c.GetTickInfo(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting tick info")
+		return nil, fmt.Errorf("getting tick info: %w", err)
 	}
 
 	if tickInfo.Tick < tickNumber {
-		return nil, errors.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
+		return nil, fmt.Errorf("Requested tick %d is in the future. Latest tick is: %d", tickNumber, tickInfo.Tick)
 	}
 
 	request := struct {
@@ -186,12 +187,12 @@ func (c *Client) GetTickTransactionsStatus(ctx context.Context, tickNumber uint3
 	var result nodetypes.TransactionStatus
 	err = c.connector.PerformCoreRequest(ctx, nodetypes.TxStatusTypeRequest, request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "handling chainRequest")
+		return nil, fmt.Errorf("handling chainRequest: %w", err)
 	}
 
 	txStatus, err := result.ToProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "converting tick transactions status to proto")
+		return nil, fmt.Errorf("converting tick transactions status to proto: %w", err)
 	}
 
 	return txStatus, nil

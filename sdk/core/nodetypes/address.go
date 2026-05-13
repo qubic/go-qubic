@@ -3,11 +3,12 @@ package nodetypes
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"fmt"
 	"io"
+
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 )
 
 const (
@@ -41,16 +42,16 @@ func (ai *AddressInfo) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type != BalanceTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", BalanceTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", BalanceTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, ai)
 	if err != nil {
-		return errors.Wrap(err, "reading addr info data from reader")
+		return fmt.Errorf("reading addr info data from reader: %w", err)
 	}
 
 	return nil
@@ -60,7 +61,7 @@ func (ai *AddressInfo) ToProto() (*qubicpb.EntityInfo, error) {
 	aic := addressInfoConverter{rawAddressInfo: *ai}
 	aiPb, err := aic.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling address info converter to proto")
+		return nil, fmt.Errorf("calling address info converter to proto: %w", err)
 	}
 
 	return aiPb, nil
@@ -73,7 +74,7 @@ type addressInfoConverter struct {
 func (aic addressInfoConverter) toProto() (*qubicpb.EntityInfo, error) {
 	id, err := common.PubKeyToIdentity(aic.rawAddressInfo.AddressData.PublicKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting address id from pubkey hex: %s", hex.EncodeToString(aic.rawAddressInfo.AddressData.PublicKey[:]))
+		return nil, fmt.Errorf("getting address id from pubkey hex: %s: %w", hex.EncodeToString(aic.rawAddressInfo.AddressData.PublicKey[:]), err)
 	}
 
 	siblings := make([]string, 0, SpectrumDepth)
@@ -83,7 +84,7 @@ func (aic addressInfoConverter) toProto() (*qubicpb.EntityInfo, error) {
 		}
 		siblingID, err := common.PubKeyToIdentity(sibling)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting address id from sibling hex: %s", hex.EncodeToString(sibling[:]))
+			return nil, fmt.Errorf("getting address id from sibling hex: %s: %w", hex.EncodeToString(sibling[:]), err)
 		}
 		siblings = append(siblings, siblingID.String())
 	}

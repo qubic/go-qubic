@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
-	"github.com/qubic/go-qubic/sdk/qx"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
+	"github.com/qubic/go-qubic/v2/sdk/qx"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

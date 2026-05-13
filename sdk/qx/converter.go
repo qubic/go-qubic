@@ -3,9 +3,10 @@ package qx
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"fmt"
+
+	"github.com/qubic/go-qubic/v2/common"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 )
 
 var FeesConverter feesConverter
@@ -29,7 +30,7 @@ func (aoc assetOrdersConverter) ToProto(assetOrders AssetOrders) (*qubicpb.Asset
 	for _, assetOrder := range assetOrders {
 		entityID, err := common.PubKeyToIdentity(assetOrder.Entity)
 		if err != nil {
-			return nil, errors.Wrapf(err, "converting asset order entity pubkey: %s to id", base64.StdEncoding.EncodeToString(assetOrder.Entity[:]))
+			return nil, fmt.Errorf("converting asset order entity pubkey: %s to id: %w", base64.StdEncoding.EncodeToString(assetOrder.Entity[:]), err)
 		}
 		order := &qubicpb.AssetOrders_Order{
 			EntityId:       entityID.String(),
@@ -52,7 +53,7 @@ func (eoc entityOrdersConverter) ToProto(entityOrders EntityOrders) (*qubicpb.En
 	for _, entityOrder := range entityOrders {
 		issuerID, err := common.PubKeyToIdentity(entityOrder.Issuer)
 		if err != nil {
-			return nil, errors.Wrapf(err, "converting entity order issuer pubkey: %s to id", base64.StdEncoding.EncodeToString(entityOrder.Issuer[:]))
+			return nil, fmt.Errorf("converting entity order issuer pubkey: %s to id: %w", base64.StdEncoding.EncodeToString(entityOrder.Issuer[:]), err)
 		}
 
 		order := &qubicpb.EntityOrders_Order{

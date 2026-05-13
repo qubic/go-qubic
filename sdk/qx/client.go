@@ -3,10 +3,11 @@ package qx
 import (
 	"context"
 	"encoding/binary"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	"fmt"
+
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 )
 
 type Client struct {
@@ -29,12 +30,12 @@ func (c *Client) GetFees(ctx context.Context) (*qubicpb.Fees, error) {
 	var result Fees
 	err := c.connector.PerformSmartContractRequest(ctx, rcf, nil, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing smart contract request")
+		return nil, fmt.Errorf("performing smart contract request: %w", err)
 	}
 
 	fees, err := FeesConverter.ToProto(result)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting from node type")
+		return nil, fmt.Errorf("converting from node type: %w", err)
 	}
 
 	return fees, nil
@@ -43,7 +44,7 @@ func (c *Client) GetFees(ctx context.Context) (*qubicpb.Fees, error) {
 func (c *Client) GetAssetAskOrders(ctx context.Context, name string, issuerID string, offset uint64) (*qubicpb.AssetOrders, error) {
 	orders, err := c.getAssetOrders(ctx, uint16(viewAssetAskOrder), name, issuerID, offset)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting asset orders")
+		return nil, fmt.Errorf("getting asset orders: %w", err)
 	}
 
 	return orders, nil
@@ -52,7 +53,7 @@ func (c *Client) GetAssetAskOrders(ctx context.Context, name string, issuerID st
 func (c *Client) GetAssetBidOrders(ctx context.Context, name string, issuerID string, offset uint64) (*qubicpb.AssetOrders, error) {
 	orders, err := c.getAssetOrders(ctx, uint16(viewAssetBidOrder), name, issuerID, offset)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting asset orders")
+		return nil, fmt.Errorf("getting asset orders: %w", err)
 	}
 
 	return orders, nil
@@ -64,7 +65,7 @@ func (c *Client) getAssetOrders(ctx context.Context, assetOrderType uint16, name
 		id := common.Identity(issuerID)
 		issuerPubKey, err := id.ToPubKey(false)
 		if err != nil {
-			return nil, errors.Wrap(err, "converting issuer id to pubkey")
+			return nil, fmt.Errorf("converting issuer id to pubkey: %w", err)
 		}
 		idPubkey = issuerPubKey
 	}
@@ -93,12 +94,12 @@ func (c *Client) getAssetOrders(ctx context.Context, assetOrderType uint16, name
 	var result AssetOrders
 	err := c.connector.PerformSmartContractRequest(ctx, rcf, request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing smart contract request")
+		return nil, fmt.Errorf("performing smart contract request: %w", err)
 	}
 
 	aao, err := AssetOrdersConverter.ToProto(result)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting from node type")
+		return nil, fmt.Errorf("converting from node type: %w", err)
 	}
 
 	return aao, nil
@@ -107,7 +108,7 @@ func (c *Client) getAssetOrders(ctx context.Context, assetOrderType uint16, name
 func (c *Client) GetEntityAskOrders(ctx context.Context, entityID string, offset uint64) (*qubicpb.EntityOrders, error) {
 	orders, err := c.getEntityOrders(ctx, uint16(viewEntityAskOrder), entityID, offset)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting entity orders")
+		return nil, fmt.Errorf("getting entity orders: %w", err)
 	}
 
 	return orders, nil
@@ -116,7 +117,7 @@ func (c *Client) GetEntityAskOrders(ctx context.Context, entityID string, offset
 func (c *Client) GetEntityBidOrders(ctx context.Context, entityID string, offset uint64) (*qubicpb.EntityOrders, error) {
 	orders, err := c.getEntityOrders(ctx, uint16(viewEntityBidOrder), entityID, offset)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting entity orders")
+		return nil, fmt.Errorf("getting entity orders: %w", err)
 	}
 
 	return orders, nil
@@ -126,7 +127,7 @@ func (c *Client) getEntityOrders(ctx context.Context, entityOrderType uint16, en
 	id := common.Identity(entityID)
 	entityPubKey, err := id.ToPubKey(false)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting entity id to pubkey")
+		return nil, fmt.Errorf("converting entity id to pubkey: %w", err)
 	}
 
 	request := struct {
@@ -148,12 +149,12 @@ func (c *Client) getEntityOrders(ctx context.Context, entityOrderType uint16, en
 	var result EntityOrders
 	err = c.connector.PerformSmartContractRequest(ctx, rcf, request, &result)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing smart contract request")
+		return nil, fmt.Errorf("performing smart contract request: %w", err)
 	}
 
 	eo, err := EntityOrdersConverter.ToProto(result)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting from node type")
+		return nil, fmt.Errorf("converting from node type: %w", err)
 	}
 
 	return eo, nil

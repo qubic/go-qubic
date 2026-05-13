@@ -2,7 +2,7 @@ package connector
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"fmt"
 	"net"
 	"time"
 )
@@ -36,7 +36,7 @@ func NewConnector(nodeIP string, connectorConfig Config) (*Connector, error) {
 	}
 	cp, err := newConnectionPool(pConfig, scf.Connect, scf.Close)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new connection pool")
+		return nil, fmt.Errorf("creating new connection pool: %w", err)
 	}
 
 	return &Connector{conPool: cp}, nil
@@ -51,7 +51,7 @@ func NewPoolConnector(poolFetcherConfig PoolFetcherConfig, connectorConfig Confi
 	pcf := newPoolConnectionFactory(poolFetcherConfig.URL, poolFetcherConfig.RequestTimeout, connectorConfig.ConnectionPort, connectorConfig.ConnectionTimeout, connectorConfig.HandlerRequestTimeout)
 	cp, err := newConnectionPool(poolConfig, pcf.Connect, pcf.Close)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new connection pool")
+		return nil, fmt.Errorf("creating new connection pool: %w", err)
 	}
 
 	return &Connector{conPool: cp}, nil
@@ -60,14 +60,14 @@ func NewPoolConnector(poolFetcherConfig PoolFetcherConfig, connectorConfig Confi
 func (c *Connector) WithConnection(f func(requestPerformer RequestPerformer) error) error {
 	ch, err := c.conPool.Get()
 	if err != nil {
-		return errors.Wrap(err, "getting connection handler")
+		return fmt.Errorf("getting connection handler: %w", err)
 	}
 
 	npc := NewNoPoolConnector(ch)
 	err = f(npc)
 	c.conPool.PutBack(ch, err)
 	if err != nil {
-		return errors.Wrap(err, "running function")
+		return fmt.Errorf("running function: %w", err)
 	}
 
 	return nil
@@ -77,7 +77,7 @@ func (c *Connector) PerformCoreRequest(ctx context.Context, requestType uint8, r
 	var err error
 	ch, err := c.conPool.Get()
 	if err != nil {
-		return errors.Wrap(err, "getting connection handler")
+		return fmt.Errorf("getting connection handler: %w", err)
 	}
 	defer func() {
 		c.conPool.PutBack(ch, err)
@@ -85,7 +85,7 @@ func (c *Connector) PerformCoreRequest(ctx context.Context, requestType uint8, r
 
 	err = ch.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling core request")
+		return fmt.Errorf("handling core request: %w", err)
 	}
 
 	return nil
@@ -103,12 +103,12 @@ type Session struct {
 func (s *Session) PerformCoreRequestWithPasscode(ctx context.Context, requestType uint8, passcodes map[string][4]uint64, requestData PasscodeRequestData, dest ReaderUnmarshaler) error {
 	err := injectPasscode(requestData, s.ch.conn.RemoteAddr(), passcodes)
 	if err != nil {
-		return errors.Wrap(err, "injecting passcode")
+		return fmt.Errorf("injecting passcode: %w", err)
 	}
 
 	err = s.ch.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling core request with passcode")
+		return fmt.Errorf("handling core request with passcode: %w", err)
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func (s *Session) PerformCoreRequestWithPasscode(ctx context.Context, requestTyp
 func (c *Connector) NewSession() (*Session, func(error), error) {
 	ch, err := c.conPool.Get()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting connection handler")
+		return nil, nil, fmt.Errorf("getting connection handler: %w", err)
 	}
 
 	doneFunc := func(err error) {
@@ -131,7 +131,7 @@ func (c *Connector) PerformCoreRequestWithPasscode(ctx context.Context, requestT
 	var err error
 	ch, err := c.conPool.Get()
 	if err != nil {
-		return errors.Wrap(err, "getting connection handler")
+		return fmt.Errorf("getting connection handler: %w", err)
 	}
 	defer func() {
 		c.conPool.PutBack(ch, err)
@@ -139,12 +139,12 @@ func (c *Connector) PerformCoreRequestWithPasscode(ctx context.Context, requestT
 
 	err = injectPasscode(requestData, ch.conn.RemoteAddr(), passcodes)
 	if err != nil {
-		return errors.Wrap(err, "injecting passcode")
+		return fmt.Errorf("injecting passcode: %w", err)
 	}
 
 	err = ch.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling core request with passcode")
+		return fmt.Errorf("handling core request with passcode: %w", err)
 	}
 
 	return nil
@@ -154,7 +154,7 @@ func (c *Connector) PerformSmartContractRequest(ctx context.Context, reqContract
 	var err error
 	ch, err := c.conPool.Get()
 	if err != nil {
-		return errors.Wrap(err, "getting connection handler")
+		return fmt.Errorf("getting connection handler: %w", err)
 	}
 	defer func() {
 		c.conPool.PutBack(ch, err)
@@ -162,7 +162,7 @@ func (c *Connector) PerformSmartContractRequest(ctx context.Context, reqContract
 
 	err = ch.handleSmartContractRequest(ctx, reqContractFunction, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling smart contract request")
+		return fmt.Errorf("handling smart contract request: %w", err)
 	}
 
 	return nil
@@ -179,12 +179,12 @@ func NewNoPoolConnector(connHandler *connHandler) *NoPoolConnector {
 func (c *NoPoolConnector) PerformCoreRequestWithPasscode(ctx context.Context, requestType uint8, passcodes map[string][4]uint64, requestData PasscodeRequestData, dest ReaderUnmarshaler) error {
 	err := injectPasscode(requestData, c.connHandler.conn.RemoteAddr(), passcodes)
 	if err != nil {
-		return errors.Wrap(err, "injecting passcode")
+		return fmt.Errorf("injecting passcode: %w", err)
 	}
 
 	err = c.connHandler.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling core request with passcode")
+		return fmt.Errorf("handling core request with passcode: %w", err)
 	}
 
 	return nil
@@ -193,7 +193,7 @@ func (c *NoPoolConnector) PerformCoreRequestWithPasscode(ctx context.Context, re
 func (c *NoPoolConnector) PerformCoreRequest(ctx context.Context, requestType uint8, requestData interface{}, dest ReaderUnmarshaler) error {
 	err := c.connHandler.handleCoreRequest(ctx, requestType, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling core request")
+		return fmt.Errorf("handling core request: %w", err)
 	}
 
 	return nil
@@ -202,7 +202,7 @@ func (c *NoPoolConnector) PerformCoreRequest(ctx context.Context, requestType ui
 func (c *NoPoolConnector) PerformSmartContractRequest(ctx context.Context, reqContractFunction RequestContractFunction, requestData interface{}, dest ReaderUnmarshaler) error {
 	err := c.connHandler.handleSmartContractRequest(ctx, reqContractFunction, requestData, dest)
 	if err != nil {
-		return errors.Wrap(err, "handling smart contract request")
+		return fmt.Errorf("handling smart contract request: %w", err)
 	}
 
 	return nil
@@ -211,7 +211,7 @@ func (c *NoPoolConnector) PerformSmartContractRequest(ctx context.Context, reqCo
 func injectPasscode(requestData PasscodeRequestData, destinationNodeAddr net.Addr, passcodes map[string][4]uint64) error {
 	passcode, err := getPasscodeForAddr(destinationNodeAddr, passcodes)
 	if err != nil {
-		return errors.Wrapf(err, "getting passcode for addr: %s", destinationNodeAddr.String())
+		return fmt.Errorf("getting passcode for addr: %s: %w", destinationNodeAddr.String(), err)
 	}
 
 	requestData.AddPasscode(passcode)
@@ -222,12 +222,12 @@ func injectPasscode(requestData PasscodeRequestData, destinationNodeAddr net.Add
 func getPasscodeForAddr(addr net.Addr, passcodes map[string][4]uint64) ([4]uint64, error) {
 	host, _, err := net.SplitHostPort(addr.String())
 	if err != nil {
-		return [4]uint64{}, errors.Wrap(err, "splitting host and port")
+		return [4]uint64{}, fmt.Errorf("splitting host and port: %w", err)
 	}
 
 	passcode, ok := passcodes[host]
 	if !ok {
-		return [4]uint64{}, errors.Errorf("passcode not found for host %s", host)
+		return [4]uint64{}, fmt.Errorf("passcode not found for host %s", host)
 	}
 
 	return passcode, nil

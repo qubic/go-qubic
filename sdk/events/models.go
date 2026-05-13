@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
-	"github.com/qubic/go-qubic/sdk/core/nodetypes"
+	"github.com/qubic/go-qubic/v2/connector"
+	"github.com/qubic/go-qubic/v2/sdk/core/nodetypes"
 )
 
 const (
@@ -53,7 +52,7 @@ func (ter *TransactionEventsRange) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading tick data from reader")
+		return fmt.Errorf("reading tick data from reader: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -67,12 +66,12 @@ func (ter *TransactionEventsRange) UnmarshallFromReader(r io.Reader) error {
 	_ = headerSize
 
 	if header.Type != TransactionEventsRangeTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", TransactionEventsRangeTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", TransactionEventsRangeTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, ter)
 	if err != nil {
-		return errors.Wrap(err, "reading transaction events range from reader")
+		return fmt.Errorf("reading transaction events range from reader: %w", err)
 	}
 
 	return nil
@@ -96,7 +95,7 @@ type Header struct {
 func (ev *Event) UnmarshalFromReader(r io.Reader) error {
 	err := binary.Read(r, binary.LittleEndian, &ev.Header)
 	if err != nil {
-		return errors.Wrap(err, "reading event header")
+		return fmt.Errorf("reading event header: %w", err)
 	}
 
 	ev.EventType = uint8(ev.Header.Tmp >> 24)
@@ -105,7 +104,7 @@ func (ev *Event) UnmarshalFromReader(r io.Reader) error {
 	eventData := make([]byte, ev.EventSize)
 	err = binary.Read(r, binary.LittleEndian, eventData)
 	if err != nil {
-		return errors.Wrap(err, "reading event data")
+		return fmt.Errorf("reading event data: %w", err)
 	}
 
 	ev.Data = eventData
@@ -122,7 +121,7 @@ func (evs *Events) UnmarshallFromReader(r io.Reader) error {
 	var header connector.RequestResponseHeader
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -130,14 +129,14 @@ func (evs *Events) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != EventTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", EventTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", EventTypeResponse, header.Type)
 	}
 	items := make([]Event, 0, evs.Count)
 	for range evs.Count {
 		var ev Event
 		err = ev.UnmarshalFromReader(r)
 		if err != nil {
-			return errors.Wrap(err, "unmarshalling event")
+			return fmt.Errorf("unmarshalling event: %w", err)
 		}
 		items = append(items, ev)
 	}
@@ -157,7 +156,7 @@ func (e *QuTransferEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading qu transfer event")
+		return fmt.Errorf("reading qu transfer event: %w", err)
 	}
 
 	return nil
@@ -176,7 +175,7 @@ func (e *AssetIssuanceEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading asset issuance event")
+		return fmt.Errorf("reading asset issuance event: %w", err)
 	}
 
 	return nil
@@ -197,7 +196,7 @@ func (e *AssetOwnershipChangeEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading asset ownership change event")
+		return fmt.Errorf("reading asset ownership change event: %w", err)
 	}
 
 	return nil
@@ -218,7 +217,7 @@ func (e *AssetPossessionChangeEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading asset possession change event")
+		return fmt.Errorf("reading asset possession change event: %w", err)
 	}
 
 	return nil
@@ -233,7 +232,7 @@ func (e *BurningEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading burning event")
+		return fmt.Errorf("reading burning event: %w", err)
 	}
 
 	return nil
@@ -249,7 +248,7 @@ func (e *DustBurningEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading dust burning event")
+		return fmt.Errorf("reading dust burning event: %w", err)
 	}
 
 	return nil
@@ -267,7 +266,7 @@ func (e *SpectrumStatsEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading spectrum stats event")
+		return fmt.Errorf("reading spectrum stats event: %w", err)
 	}
 
 	return nil
@@ -282,13 +281,13 @@ func (e *ContractMessageEvent) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	err := binary.Read(r, binary.LittleEndian, &e.ContractID)
 	if err != nil {
-		return errors.Wrap(err, "reading contract id")
+		return fmt.Errorf("reading contract id: %w", err)
 	}
 
 	e.Message = make([]byte, len(data)-4)
 	err = binary.Read(r, binary.LittleEndian, &e.Message)
 	if err != nil {
-		return errors.Wrap(err, "reading contract message")
+		return fmt.Errorf("reading contract message: %w", err)
 	}
 
 	return nil
@@ -392,7 +391,7 @@ func (e *TickTransactionEventIDs) UnmarshallFromReader(r io.Reader) error {
 
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header from reader")
+		return fmt.Errorf("reading header from reader: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -400,12 +399,12 @@ func (e *TickTransactionEventIDs) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != TickTransactionEventsIDsTypeResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", TickTransactionEventsIDsTypeResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", TickTransactionEventsIDsTypeResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, e)
 	if err != nil {
-		return errors.Wrap(err, "reading tick transaction event ids from reader")
+		return fmt.Errorf("reading tick transaction event ids from reader: %w", err)
 	}
 
 	return nil

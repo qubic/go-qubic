@@ -2,7 +2,7 @@ package connector
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"fmt"
 	"io"
 	"net"
 	"time"
@@ -29,13 +29,13 @@ func (prw *packetReadWriter) writePacket(ctx context.Context, conn net.Conn, pac
 	}
 	err := conn.SetWriteDeadline(writeDeadline)
 	if err != nil {
-		return errors.Wrap(err, "setting write deadline")
+		return fmt.Errorf("setting write deadline: %w", err)
 	}
 	defer conn.SetWriteDeadline(time.Time{})
 
 	_, err = conn.Write(packet)
 	if err != nil {
-		return errors.Wrap(err, "writing serialized binary data to connection")
+		return fmt.Errorf("writing serialized binary data to connection: %w", err)
 	}
 
 	return nil
@@ -55,13 +55,13 @@ func (prw *packetReadWriter) readPacket(ctx context.Context, conn net.Conn, dest
 
 	err := conn.SetReadDeadline(readDeadline)
 	if err != nil {
-		return errors.Wrap(err, "setting read deadline")
+		return fmt.Errorf("setting read deadline: %w", err)
 	}
 	defer conn.SetReadDeadline(time.Time{})
 
 	err = dest.UnmarshallFromReader(conn)
 	if err != nil {
-		return errors.Wrap(err, "unmarshalling response")
+		return fmt.Errorf("unmarshalling response: %w", err)
 	}
 
 	return nil

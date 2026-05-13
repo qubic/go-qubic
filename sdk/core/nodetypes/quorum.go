@@ -3,13 +3,14 @@ package nodetypes
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/common"
-	"github.com/qubic/go-qubic/connector"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"fmt"
 	"io"
 	"time"
+
+	"github.com/qubic/go-qubic/v2/common"
+	"github.com/qubic/go-qubic/v2/connector"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -58,7 +59,7 @@ func (qv *QuorumVotes) UnmarshallFromReader(r io.Reader) error {
 		var header connector.RequestResponseHeader
 		err := binary.Read(r, binary.BigEndian, &header)
 		if err != nil {
-			return errors.Wrap(err, "reading header")
+			return fmt.Errorf("reading header: %w", err)
 		}
 
 		if header.Type == connector.EndResponse {
@@ -67,12 +68,12 @@ func (qv *QuorumVotes) UnmarshallFromReader(r io.Reader) error {
 
 		var qtd QuorumTickVote
 		if header.Type != QuorumTickTypeResponse {
-			return errors.Errorf("Invalid header type, expected %d, found %d", QuorumTickTypeResponse, header.Type)
+			return fmt.Errorf("Invalid header type, expected %d, found %d", QuorumTickTypeResponse, header.Type)
 		}
 
 		err = binary.Read(r, binary.LittleEndian, &qtd)
 		if err != nil {
-			return errors.Wrap(err, "reading quorum tick data from reader")
+			return fmt.Errorf("reading quorum tick data from reader: %w", err)
 		}
 
 		*qv = append(*qv, qtd)
@@ -85,7 +86,7 @@ func (qv *QuorumVotes) ToProto() (*qubicpb.QuorumVote, error) {
 	qc := quorumConverter{quorumVotes: *qv}
 	qvPb, err := qc.toProto()
 	if err != nil {
-		return nil, errors.Wrap(err, "calling quorum converter to proto")
+		return nil, fmt.Errorf("calling quorum converter to proto: %w", err)
 	}
 
 	return qvPb, nil
@@ -98,7 +99,7 @@ type quorumConverter struct {
 func (qc *quorumConverter) toProto() (*qubicpb.QuorumVote, error) {
 	sharedVotes, err := qc.toSharedVotes()
 	if err != nil {
-		return nil, errors.Wrap(err, "to shared votes")
+		return nil, fmt.Errorf("to shared votes: %w", err)
 	}
 
 	saltedVotes := qc.toSaltedVotes()
@@ -152,7 +153,7 @@ func (qc *quorumConverter) toSharedVotes() ([]*qubicpb.QuorumVote_GroupedSharedV
 
 		digest, err := hv.digest()
 		if err != nil {
-			return nil, errors.Wrap(err, "getting digest")
+			return nil, fmt.Errorf("getting digest: %w", err)
 		}
 
 		sv := qc.toSharedVote(qv)
@@ -193,13 +194,13 @@ func (qc *quorumConverter) getVoteDigest(vote QuorumTickVote) ([32]byte, error) 
 
 	sData, err := common.BinarySerializeLE(vote)
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "serializing data")
+		return [32]byte{}, fmt.Errorf("serializing data: %w", err)
 	}
 
 	tickData := sData[:len(sData)-64]
 	digest, err := common.K12Hash(tickData)
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "hashing tick data")
+		return [32]byte{}, fmt.Errorf("hashing tick data: %w", err)
 	}
 
 	return digest, nil
@@ -225,12 +226,12 @@ type heatmapVote struct {
 func (hv *heatmapVote) digest() ([32]byte, error) {
 	b, err := common.BinarySerializeLE(hv)
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "serializing vote")
+		return [32]byte{}, fmt.Errorf("serializing vote: %w", err)
 	}
 
 	digest, err := common.K12Hash(b)
 	if err != nil {
-		return [32]byte{}, errors.Wrap(err, "hashing vote")
+		return [32]byte{}, fmt.Errorf("hashing vote: %w", err)
 	}
 
 	return digest, nil

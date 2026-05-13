@@ -2,9 +2,10 @@ package qx
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
-	"github.com/qubic/go-qubic/connector"
+	"fmt"
 	"io"
+
+	"github.com/qubic/go-qubic/v2/connector"
 )
 
 const (
@@ -40,7 +41,7 @@ func (f *Fees) UnmarshallFromReader(r io.Reader) error {
 	var header connector.RequestResponseHeader
 	err := header.UnmarshallFromReader(r)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -48,12 +49,12 @@ func (f *Fees) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, f)
 	if err != nil {
-		return errors.Wrap(err, "reading entire struct from buffer")
+		return fmt.Errorf("reading entire struct from buffer: %w", err)
 	}
 
 	return nil
@@ -86,7 +87,7 @@ func (ao *AssetOrders) UnmarshallFromReader(r io.Reader) error {
 	var header connector.RequestResponseHeader
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -94,13 +95,13 @@ func (ao *AssetOrders) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	receivedOrders := make([]AssetOrder, 256)
 	err = binary.Read(r, binary.LittleEndian, receivedOrders)
 	if err != nil {
-		return errors.Wrap(err, "reading bytes from buffer")
+		return fmt.Errorf("reading bytes from buffer: %w", err)
 	}
 
 	orders := make([]AssetOrder, 0, 256)
@@ -146,7 +147,7 @@ func (eo *EntityOrders) UnmarshallFromReader(r io.Reader) error {
 	var header connector.RequestResponseHeader
 	err := binary.Read(r, binary.BigEndian, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading header")
+		return fmt.Errorf("reading header: %w", err)
 	}
 
 	if header.Type == connector.EndResponse {
@@ -154,13 +155,13 @@ func (eo *EntityOrders) UnmarshallFromReader(r io.Reader) error {
 	}
 
 	if header.Type != connector.ContractFunctionResponse {
-		return errors.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
+		return fmt.Errorf("Invalid header type, expected %d, found %d", connector.ContractFunctionResponse, header.Type)
 	}
 
 	receivedOrders := make([]EntityOrder, 256)
 	err = binary.Read(r, binary.LittleEndian, receivedOrders)
 	if err != nil {
-		return errors.Wrap(err, "reading bytes from buffer")
+		return fmt.Errorf("reading bytes from buffer: %w", err)
 	}
 
 	orders := make([]EntityOrder, 0, 256)

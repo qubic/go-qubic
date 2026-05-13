@@ -3,7 +3,7 @@ package events
 import (
 	"encoding/base64"
 	"encoding/binary"
-	qubicpb "github.com/qubic/go-qubic/proto/v1"
+	qubicpb "github.com/qubic/go-qubic/v2/proto/v1"
 )
 
 var EventConverter eventConverter
